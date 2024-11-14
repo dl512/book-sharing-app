@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Sharing App - Share a Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #book-list {
+            display: flex; /* Use flexbox for layout */
+            flex-wrap: wrap; /* Allow wrapping of containers */
+            justify-content: space-between; /* Space out book containers */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+        }
+        #book-list li {
+            margin: 10px 0;
+        }
+
+        .book-container {
+            width: calc(50% - 16px); /* Adjust to fit two containers per row with spacing */
+            max-width: 150px; /* Optional: limit max width */
+            height: 200px; /* Fixed height */
+            border: 1px solid #ccc; /* Rectangle border */
+            border-radius: 8px; /* Slightly rounded corners */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Space out elements vertically */
+            padding: 16px;
+            margin: 8px; /* Space between containers */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            box-sizing: border-box; /* Include padding and border in width and height */
+        }
+
+        .title-author {
+            text-align: center; /* Centering text */
+            font-weight: bold; /* Bold text */
+            margin-bottom: 8px; /* Spacing from the description */
+        }
+
+        .description {
+            text-align: center; /* Centering text */
+            flex-grow: 1; /* Allow description to expand */
+            display: flex;
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between; /* Space buttons */
+            align-items: center; /* Center vertically */
+        }
+
+        .like-button {
+            background-color: #007bff; /* Button color */
+            color: white; /* Text color */
+            border: none; /* No border */
+            padding: 8px 12px; /* Padding for button */
+            border-radius: 4px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        .like-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        .chat-dropdown {
+            border: 1px solid #ccc; /* Border for dropdown */
+            border-radius: 4px; /* Rounded corners */
+            padding: 6px; /* Padding for dropdown */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+
+        
+    </style>
+</head>
+<body>
+
+    <h1>Book Sharing Application</h1>
+
+    <section id="book-sharing">
+        <h2>Share a Book</h2>
+        <form id="book-form">
+            <input type="text" id="book-title" placeholder="Title" required>
+            <input type="text" id="book-author" placeholder="Author" required>
+            <textarea id="book-description" placeholder="Comment" required></textarea>
+            <button type="submit">Share Book</button>
+        </form>
+
+        <h2>Shared Books</h2>
+        <ul id="book-list"></ul> <!-- Container for dynamically added books -->
+        <ul id="book-container"></ul> <!-- Container for dynamically added books -->
+
+        <button id="logout-button">Logout</button>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
