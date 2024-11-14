@@ -8,13 +8,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = document.getElementById("register-userid").value;
       const password = document.getElementById("register-password").value;
 
-      const response = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, password }),
-      });
+      const response = await fetch(
+        "https://book-sharing-app.onrender.com/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, password }),
+        }
+      );
 
       const data = await response.text();
       alert(data);
@@ -29,13 +32,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = document.getElementById("login-userid").value;
       const password = document.getElementById("login-password").value;
 
-      const response = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, password }),
-      });
+      const response = await fetch(
+        "https://book-sharing-app.onrender.com/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, password }),
+        }
+      );
 
       if (response.ok) {
         const { token } = await response.json();
@@ -60,14 +66,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:3000/api/books", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title, author, description }),
-      });
+      const response = await fetch(
+        "https://book-sharing-app.onrender.com/api/books",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ title, author, description }),
+        }
+      );
 
       const data = await response.text();
       alert(data); // Show server response
@@ -82,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function likeBook(bookId, bookContainer) {
     const token = localStorage.getItem("token");
     const likeResponse = await fetch(
-      `http://localhost:3000/api/books/${bookId}/like`,
+      `https://book-sharing-app.onrender.com/api/books/${bookId}/like`,
       {
         method: "POST",
         headers: {
@@ -143,11 +152,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const response = await fetch("http://localhost:3000/api/books", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      "https://book-sharing-app.onrender.com/api/books",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -264,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/chatrooms/${chatRoomId}/messages`,
+        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -318,7 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const senderId = JSON.parse(atob(token.split(".")[1])).id; // Get current user ID from the token
 
       const response = await fetch(
-        `http://localhost:3000/api/chatrooms/${chatRoomId}/messages`,
+        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
         {
           method: "POST",
           headers: {
