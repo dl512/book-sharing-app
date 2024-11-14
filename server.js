@@ -30,6 +30,11 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!");
 });
 
+// Example route for the root URL
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // User schema
 const userSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true, minlength: 3 },
