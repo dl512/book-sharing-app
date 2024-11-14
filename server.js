@@ -9,6 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log(`Node.js version: ${process.version}`);
+
 // MongoDB connection
 mongoose
   .connect(process.env.MONGODB_URI, {
