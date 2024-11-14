@@ -4,12 +4,14 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log(`Node.js version: ${process.version}`);
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB connection
 mongoose
