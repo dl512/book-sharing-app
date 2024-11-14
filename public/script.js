@@ -136,7 +136,15 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
       if (selectedChatRoomId) {
-        window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        // Create a temporary button to trigger the window.open
+        const tempButton = document.createElement("button");
+        tempButton.style.display = "none";
+        document.body.appendChild(tempButton);
+        tempButton.onclick = () => {
+          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+          document.body.removeChild(tempButton); // Clean up
+        };
+        tempButton.click(); // Simulate a click
       }
     });
 
@@ -251,8 +259,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
+      console.log("Dropdown changed:", selectedChatRoomId); // Debug log
       if (selectedChatRoomId) {
-        window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        // Create a temporary button to trigger the window.open
+        const tempButton = document.createElement("button");
+        tempButton.style.display = "none"; // Hide the button
+        document.body.appendChild(tempButton);
+
+        tempButton.onclick = () => {
+          console.log("Temp button clicked"); // Debug log
+          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+          document.body.removeChild(tempButton); // Clean up the temporary button
+        };
+
+        // Simulate a click
+        tempButton.click();
       }
     });
 
