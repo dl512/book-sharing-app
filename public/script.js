@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to handle liking a book
-  async function likeBook(bookId, bookContainer) {
+  async function likeBook(bookId, bookContainer, buttonContainer) {
     const token = localStorage.getItem("token");
     const likeResponse = await fetch(
       `https://book-sharing-app.onrender.com/api/books/${bookId}/like`,
@@ -104,6 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const book = await likeResponse.json();
       console.log("Book data after liking:", book);
 
+      // Remove the like button from the button container
+      const likeButton = bookContainer.querySelector(".like-button");
+      if (likeButton) {
+        bookContainer.removeChild(likeButton); // Remove the like button
+      }
+
       if (book && Array.isArray(book.chatRoomIds)) {
         const ownerUserId = book.userId; // Assuming userId is populated correctly
 
@@ -111,7 +117,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const chatRoomId = book.chatRoomIds[book.chatRoomIds.length - 1]; // Get the first chat room ID
 
         if (chatRoomId) {
-          displaySingleChatRoomDropdown(bookContainer, chatRoomId, ownerUserId);
+          displaySingleChatRoomDropdown(
+            bookContainer,
+            buttonContainer,
+            chatRoomId,
+            ownerUserId
+          );
         }
       } else {
         console.error("Book data is not in the expected format:", book);
@@ -123,7 +134,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to display a single chat room dropdown
-  function displaySingleChatRoomDropdown(bookContainer, chatRoomId, userId) {
+  function displaySingleChatRoomDropdown(
+    bookContainer,
+    buttonContainer,
+    chatRoomId,
+    userId
+  ) {
     const dropdown = document.createElement("select");
     dropdown.className = "chat-dropdown";
     dropdown.innerHTML = `<option value="">Chat with...</option>`; // Default option
@@ -133,32 +149,23 @@ document.addEventListener("DOMContentLoaded", () => {
     option.textContent = `${userId}`; // Display user ID
     dropdown.appendChild(option);
 
-    dropdown.addEventListener("change", (e) => {
-      const selectedChatRoomId = e.target.value;
+    // Create a button to open the chat room
+    const openChatButton = document.createElement("button");
+    openChatButton.textContent = "Chat";
+    openChatButton.className = "chat-button";
+
+    // Set up the click event for the button
+    openChatButton.onclick = () => {
+      const selectedChatRoomId = dropdown.value;
       if (selectedChatRoomId) {
-        // Open a new window/tab first
-        var windowReference = window.open(); // Open a blank window/tab
-
-        const myService = {
-          getUrl: function (chatRoomId) {
-            return Promise.resolve(`chatroom.html?id=${chatRoomId}`); // Example implementation
-          },
-        };
-
-        // Simulate a service call to get the URL
-        myService
-          .getUrl(selectedChatRoomId)
-          .then(function (url) {
-            windowReference.location = url; // Set the location of the new window/tab
-          })
-          .catch(function (error) {
-            console.error("Error fetching URL:", error);
-            windowReference.close(); // Close the window if there's an error
-          });
+        const url = `chatroom.html?id=${selectedChatRoomId}`;
+        window.open(url, "_blank"); // Open in a new tab
       }
-    });
+    };
 
-    bookContainer.appendChild(dropdown);
+    buttonContainer.appendChild(dropdown);
+    buttonContainer.appendChild(openChatButton);
+    bookContainer.appendChild(buttonContainer);
   }
 
   async function loadBooks() {
@@ -201,6 +208,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const bookContainer = document.createElement("div");
       bookContainer.className = "book-container";
 
+      const buttonContainer = document.createElement("div");
+      buttonContainer.className = "button-container";
+
       // Create the title and author section
       const titleAuthor = document.createElement("div");
       titleAuthor.className = "title-author";
@@ -215,12 +225,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Create like button only if the user is not the owner
       if (book.userId._id !== userId) {
-        const likeButton = document.createElement("button");
-        likeButton.textContent = `Like`;
-        likeButton.className = "like-button";
+        const hasLiked = book.likes.some((like) => like._id === userId);
 
-        likeButton.onclick = () => likeBook(book._id, bookContainer);
-        bookContainer.appendChild(likeButton);
+        if (!hasLiked) {
+          // Only create the like button if the user hasn't liked the book
+          const likeButton = document.createElement("button");
+          likeButton.textContent = `Like`;
+          likeButton.className = "like-button";
+
+          likeButton.onclick = () =>
+            likeBook(book._id, bookContainer, buttonContainer);
+
+          bookContainer.appendChild(likeButton);
+        }
       }
 
       // Logic for displaying chat room dropdown
@@ -229,7 +246,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const chatRoomIds = book.chatRoomIds;
 
         if (chatRoomIds.length > 0) {
-          displayChatRoomDropdown(bookContainer, chatRoomIds, userIds);
+          displayChatRoomDropdown(
+            bookContainer,
+            buttonContainer,
+            chatRoomIds,
+            userIds
+          );
         }
       } else {
         const hasLiked = book.likes.some((like) => like._id === userId);
@@ -243,6 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (chatRoomIds.length > 0) {
             displaySingleChatRoomDropdown(
               bookContainer,
+              buttonContainer,
               chatRoomIds[0]._id,
               book.userId.userId
             );
@@ -255,7 +278,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to display the chat room dropdown
-  function displayChatRoomDropdown(bookContainer, chatRooms, userIds) {
+  function displayChatRoomDropdown(
+    bookContainer,
+    buttonContainer,
+    chatRooms,
+    userIds
+  ) {
     const dropdown = document.createElement("select");
     dropdown.className = "chat-dropdown";
     dropdown.innerHTML = `<option value="">Chat with...</option>`; // Default option
@@ -267,32 +295,24 @@ document.addEventListener("DOMContentLoaded", () => {
       dropdown.appendChild(option);
     });
 
-    dropdown.addEventListener("change", (e) => {
-      const selectedChatRoomId = e.target.value;
+    // Create a button to open the chat room
+    const openChatButton = document.createElement("button");
+    openChatButton.textContent = "Chat";
+    openChatButton.className = "chat-button";
+
+    // Set up the click event for the button
+    openChatButton.onclick = () => {
+      const selectedChatRoomId = dropdown.value;
       if (selectedChatRoomId) {
-        // Open a new window/tab first
-        var windowReference = window.open(); // Open a blank window/tab
-
-        const myService = {
-          getUrl: function (chatRoomId) {
-            return Promise.resolve(`chatroom.html?id=${chatRoomId}`); // Example implementation
-          },
-        };
-
-        // Simulate a service call to get the URL
-        myService
-          .getUrl(selectedChatRoomId)
-          .then(function (url) {
-            windowReference.location = url; // Set the location of the new window/tab
-          })
-          .catch(function (error) {
-            console.error("Error fetching URL:", error);
-            windowReference.close(); // Close the window if there's an error
-          });
+        const url = `chatroom.html?id=${selectedChatRoomId}`;
+        window.open(url, "_blank"); // Open in a new tab
       }
-    });
+    };
 
-    bookContainer.appendChild(dropdown);
+    // Append the dropdown and button to the container
+    buttonContainer.appendChild(dropdown);
+    buttonContainer.appendChild(openChatButton);
+    bookContainer.appendChild(buttonContainer);
   }
 
   // Logout user
