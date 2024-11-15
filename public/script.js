@@ -136,24 +136,25 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
       if (selectedChatRoomId) {
-        // Create a button that will open the chat room
-        const openChatButton = document.createElement("button");
-        openChatButton.textContent = "Open Chat Room";
-        openChatButton.style.display = "none"; // Initially hide the button
+        // Open a new window/tab first
+        var windowReference = window.open(); // Open a blank window/tab
 
-        // Set up the onclick event to open the chat room in a new tab
-        openChatButton.onclick = () => {
-          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        const myService = {
+          getUrl: function (chatRoomId) {
+            return Promise.resolve(`chatroom.html?id=${chatRoomId}`); // Example implementation
+          },
         };
 
-        // Append the button to the body
-        document.body.appendChild(openChatButton);
-
-        // Simulate a click on the button
-        openChatButton.click();
-
-        // Clean up by removing the button
-        document.body.removeChild(openChatButton);
+        // Simulate a service call to get the URL
+        myService
+          .getUrl(selectedChatRoomId)
+          .then(function (url) {
+            windowReference.location = url; // Set the location of the new window/tab
+          })
+          .catch(function (error) {
+            console.error("Error fetching URL:", error);
+            windowReference.close(); // Close the window if there's an error
+          });
       }
     });
 
@@ -268,26 +269,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
-      console.log("Dropdown changed:", selectedChatRoomId); // Debug log
       if (selectedChatRoomId) {
-        // Create a button that will open the chat room
-        const openChatButton = document.createElement("button");
-        openChatButton.textContent = "Open Chat Room";
-        openChatButton.style.display = "none"; // Initially hide the button
+        // Open a new window/tab first
+        var windowReference = window.open(); // Open a blank window/tab
 
-        // Set up the onclick event to open the chat room in a new tab
-        openChatButton.onclick = () => {
-          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        const myService = {
+          getUrl: function (chatRoomId) {
+            return Promise.resolve(`chatroom.html?id=${chatRoomId}`); // Example implementation
+          },
         };
 
-        // Append the button to the body
-        document.body.appendChild(openChatButton);
-
-        // Simulate a click on the button
-        openChatButton.click();
-
-        // Clean up by removing the button
-        document.body.removeChild(openChatButton);
+        // Simulate a service call to get the URL
+        myService
+          .getUrl(selectedChatRoomId)
+          .then(function (url) {
+            windowReference.location = url; // Set the location of the new window/tab
+          })
+          .catch(function (error) {
+            console.error("Error fetching URL:", error);
+            windowReference.close(); // Close the window if there's an error
+          });
       }
     });
 
