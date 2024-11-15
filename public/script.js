@@ -136,11 +136,24 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
       if (selectedChatRoomId) {
-        // Create an anchor element
-        const anchor = document.createElement("a");
-        anchor.href = `chatroom.html?id=${selectedChatRoomId}`;
-        anchor.target = "_blank"; // Open in a new tab
-        anchor.click(); // Simulate a click on the anchor
+        // Create a button that will open the chat room
+        const openChatButton = document.createElement("button");
+        openChatButton.textContent = "Open Chat Room";
+        openChatButton.style.display = "none"; // Initially hide the button
+
+        // Set up the onclick event to open the chat room in a new tab
+        openChatButton.onclick = () => {
+          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        };
+
+        // Append the button to the body
+        document.body.appendChild(openChatButton);
+
+        // Simulate a click on the button
+        openChatButton.click();
+
+        // Clean up by removing the button
+        document.body.removeChild(openChatButton);
       }
     });
 
@@ -257,19 +270,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedChatRoomId = e.target.value;
       console.log("Dropdown changed:", selectedChatRoomId); // Debug log
       if (selectedChatRoomId) {
-        // Create an anchor element
-        const anchor = document.createElement("a");
-        anchor.href = `chatroom.html?id=${selectedChatRoomId}`;
-        anchor.target = "_blank"; // Open in a new tab
+        // Create a button that will open the chat room
+        const openChatButton = document.createElement("button");
+        openChatButton.textContent = "Open Chat Room";
+        openChatButton.style.display = "none"; // Initially hide the button
 
-        // Append the anchor to the body (not visible)
-        document.body.appendChild(anchor);
+        // Set up the onclick event to open the chat room in a new tab
+        openChatButton.onclick = () => {
+          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
+        };
 
-        // Simulate a click on the anchor
-        anchor.click();
+        // Append the button to the body
+        document.body.appendChild(openChatButton);
 
-        // Clean up by removing the anchor
-        document.body.removeChild(anchor);
+        // Simulate a click on the button
+        openChatButton.click();
+
+        // Clean up by removing the button
+        document.body.removeChild(openChatButton);
       }
     });
 
