@@ -136,15 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdown.addEventListener("change", (e) => {
       const selectedChatRoomId = e.target.value;
       if (selectedChatRoomId) {
-        // Create a temporary button to trigger the window.open
-        const tempButton = document.createElement("button");
-        tempButton.style.display = "none";
-        document.body.appendChild(tempButton);
-        tempButton.onclick = () => {
-          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
-          document.body.removeChild(tempButton); // Clean up
-        };
-        tempButton.click(); // Simulate a click
+        // Create an anchor element
+        const anchor = document.createElement("a");
+        anchor.href = `chatroom.html?id=${selectedChatRoomId}`;
+        anchor.target = "_blank"; // Open in a new tab
+        anchor.click(); // Simulate a click on the anchor
       }
     });
 
@@ -261,19 +257,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedChatRoomId = e.target.value;
       console.log("Dropdown changed:", selectedChatRoomId); // Debug log
       if (selectedChatRoomId) {
-        // Create a temporary button to trigger the window.open
-        const tempButton = document.createElement("button");
-        tempButton.style.display = "none"; // Hide the button
-        document.body.appendChild(tempButton);
+        // Create an anchor element
+        const anchor = document.createElement("a");
+        anchor.href = `chatroom.html?id=${selectedChatRoomId}`;
+        anchor.target = "_blank"; // Open in a new tab
 
-        tempButton.onclick = () => {
-          console.log("Temp button clicked"); // Debug log
-          window.open(`chatroom.html?id=${selectedChatRoomId}`, "_blank");
-          document.body.removeChild(tempButton); // Clean up the temporary button
-        };
+        // Append the anchor to the body (not visible)
+        document.body.appendChild(anchor);
 
-        // Simulate a click
-        tempButton.click();
+        // Simulate a click on the anchor
+        anchor.click();
+
+        // Clean up by removing the anchor
+        document.body.removeChild(anchor);
       }
     });
 
