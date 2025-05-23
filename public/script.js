@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openChatButton.onclick = () => {
       const selectedChatRoomId = dropdown.value;
       if (selectedChatRoomId) {
-        const url = `chatroom.html?id=${selectedChatRoomId}`;
+        const url = `chat-room.html?id=${selectedChatRoomId}`;
         window.open(url, "_blank"); // Open in a new tab
       }
     };
@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openChatButton.onclick = () => {
       const selectedChatRoomId = dropdown.value;
       if (selectedChatRoomId) {
-        const url = `chatroom.html?id=${selectedChatRoomId}`;
+        const url = `chat-room.html?id=${selectedChatRoomId}`;
         window.open(url, "_blank"); // Open in a new tab
       }
     };
@@ -326,16 +326,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Load chat messages
-  async function loadChatMessages() {
-    const token = localStorage.getItem("token");
-    const chatRoomId = new URLSearchParams(window.location.search).get("id"); // Get chat room ID from URL
-
+  async function loadMessages() {
     try {
+      const token = localStorage.getItem("token");
+      const chatRoomId = new URLSearchParams(window.location.search).get("id");
+
+      if (!token || !chatRoomId) {
+        throw new Error("Missing token or chat room ID");
+      }
+
       const response = await fetch(
         `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            Accept: "application/json",
           },
         }
       );
@@ -345,65 +350,251 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const messages = await response.json();
+      const userId = JSON.parse(atob(token.split(".")[1])).id;
 
-      console.log("Fetched messages:", messages); // Log the fetched messages
+      console.log("Fetched messages:", messages);
 
-      const messageList = document.getElementById("message-list");
-      messageList.innerHTML = "";
-      messages.forEach((msg) => {
-        const li = document.createElement("li");
+      const container = document.getElementById("messages-container");
+      container.innerHTML = messages
+        .map((message) => {
+          const isSent = message.senderId === userId;
+          const time = new Date(message.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
-        console.log("Message object:", msg);
+          return `
+            <div class="message ${isSent ? "sent" : "received"}">
+              <div class="message-content">${message.message}</div>
+              <div class="message-time">${time}</div>
+            </div>
+          `;
+        })
+        .join("");
 
-        const senderId = msg.senderId ? msg.senderId.userId : "Unknown User"; // Check if senderId is populated
-        li.textContent = `${senderId}: ${msg.message}`; // Display sender's user ID
-        messageList.appendChild(li);
-      });
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
     } catch (error) {
       console.error("Error loading messages:", error);
-      alert("Error loading messages");
+      const container = document.getElementById("messages-container");
+      container.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #e74c3c;">
+          <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
+          <p style="font-size: 18px; margin-bottom: 10px;">Error loading messages</p>
+          <p style="font-size: 14px; color: #7f8c8d;">Please try again later</p>
+        </div>
+      `;
     }
   }
 
-  // Load messages when the page loads (if on chat room page)
-  if (window.location.pathname.includes("chatroom.html")) {
-    loadChatMessages();
-  }
+  // Chat Room Functionality
+  if (window.location.pathname.includes("chat-room.html")) {
+    let currentChatRoomId = null;
+    let currentBookTitle = null;
+    let otherParticipant = null;
 
-  // Send message handler
-  const sendMessageButton = document.getElementById("send-message-button");
-  if (sendMessageButton) {
-    sendMessageButton.addEventListener("click", async () => {
-      const message = document.getElementById("message-input").value;
-      const chatRoomId = new URLSearchParams(window.location.search).get("id"); // Get chat room ID from URL
-      const token = localStorage.getItem("token");
+    // Get chat room ID from URL and decode it
+    const urlParams = new URLSearchParams(window.location.search);
+    currentChatRoomId = decodeURIComponent(urlParams.get("id"));
 
-      if (!message.trim()) {
-        alert("Please enter a message");
-        return;
-      }
+    if (!currentChatRoomId) {
+      console.error("No chat room ID provided in URL");
+      window.location.href = "sharing.html";
+      return;
+    }
 
-      const senderId = JSON.parse(atob(token.split(".")[1])).id; // Get current user ID from the token
+    // Validate chat room ID format
+    if (!/^[0-9a-fA-F]{24}$/.test(currentChatRoomId)) {
+      console.error("Invalid chat room ID format:", currentChatRoomId);
+      window.location.href = "sharing.html";
+      return;
+    }
 
-      const response = await fetch(
-        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ senderId, message }), // Include senderId in the body
+    async function loadChatRoomInfo() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location.href = "login.html";
+          return;
         }
-      );
 
-      if (response.ok) {
-        document.getElementById("message-input").value = ""; // Clear input
-        loadChatMessages(); // Reload messages
-      } else {
-        alert("Error sending message");
+        console.log("Loading chat room with ID:", currentChatRoomId);
+
+        // Add retry logic
+        let retries = 3;
+        let lastError = null;
+
+        while (retries > 0) {
+          try {
+            console.log(`Attempt ${4 - retries} to fetch chat room info...`);
+            const response = await fetch(
+              `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  Accept: "application/json",
+                },
+              }
+            );
+
+            console.log("Response status:", response.status);
+            console.log(
+              "Response headers:",
+              Object.fromEntries(response.headers.entries())
+            );
+
+            const contentType = response.headers.get("content-type");
+            console.log("Response content type:", contentType);
+
+            // First try to get the response as text
+            const responseText = await response.text();
+            console.log("Raw response:", responseText);
+
+            let responseData;
+            try {
+              // Then try to parse it as JSON
+              responseData = JSON.parse(responseText);
+              console.log("Response data:", responseData);
+            } catch (jsonError) {
+              console.error("Error parsing JSON response:", jsonError);
+              throw new Error("Invalid server response format");
+            }
+
+            if (!response.ok) {
+              // Handle specific error cases
+              if (response.status === 503) {
+                throw new Error(
+                  "Server is temporarily unavailable. Please try again in a few moments."
+                );
+              } else if (response.status === 404) {
+                throw new Error(
+                  "Chat room not found. It may have been deleted."
+                );
+              } else if (response.status === 403) {
+                throw new Error(
+                  "You are not authorized to access this chat room."
+                );
+              } else {
+                throw new Error(
+                  responseData.error || "Failed to fetch chat room info"
+                );
+              }
+            }
+
+            if (!responseData || !responseData.participants) {
+              console.error("Invalid chat room data:", responseData);
+              throw new Error("Invalid chat room data received");
+            }
+
+            const userId = JSON.parse(atob(token.split(".")[1])).id;
+            console.log("Current user ID:", userId);
+
+            // Get the other participant's info
+            otherParticipant = responseData.participants.find(
+              (p) => p._id !== userId
+            );
+            console.log("Other participant:", otherParticipant);
+
+            if (!otherParticipant) {
+              throw new Error("Could not find chat participant");
+            }
+
+            // Update header
+            document.getElementById("chat-title").textContent =
+              responseData.bookTitle || "Unknown Book";
+            document.getElementById(
+              "chat-subtitle"
+            ).textContent = `Chat with ${otherParticipant.userId}`;
+
+            // Load messages
+            await loadMessages();
+            return; // Success, exit the function
+          } catch (error) {
+            lastError = error;
+            console.log(`Retry attempt ${4 - retries} failed:`, error);
+            retries--;
+            if (retries > 0) {
+              console.log(`Waiting 1 second before retry ${4 - retries}...`);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+        }
+
+        // If we get here, all retries failed
+        throw lastError;
+      } catch (error) {
+        console.error("Error loading chat room info:", error);
+
+        // Show error message in the UI
+        const messagesContainer = document.getElementById("messages-container");
+        messagesContainer.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #e74c3c;">
+            <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
+            <p style="font-size: 18px; margin-bottom: 10px;">${error.message}</p>
+            <p style="font-size: 14px; color: #7f8c8d;">Redirecting back to chat list...</p>
+          </div>
+        `;
+
+        // Redirect back to chat list after a delay
+        setTimeout(() => {
+          window.location.href = "sharing.html";
+        }, 3000);
       }
-    });
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("message-input");
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to send message");
+        }
+
+        // Clear input
+        input.value = "";
+
+        // Reload messages
+        await loadMessages();
+      } catch (error) {
+        console.error("Error sending message:", error);
+        alert("Error sending message. Please try again.");
+      }
+    }
+
+    // Add event listener for Enter key
+    document
+      .getElementById("message-input")
+      .addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+    // Load chat room info when page loads
+    window.onload = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "login.html";
+      } else {
+        loadChatRoomInfo();
+      }
+    };
   }
 
   // Load books when the page is sharing.html

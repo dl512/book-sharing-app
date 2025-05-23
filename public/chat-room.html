@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room - Book Sharing App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .chat-header h1 {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 0.2rem;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1rem;
+            margin-top: 4rem;
+            margin-bottom: 4rem;
+            overflow-y: auto;
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            position: relative;
+        }
+
+        .message.sent {
+            background-color: #3498db;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.3rem;
+        }
+
+        .message.received {
+            background-color: #fff;
+            color: #2c3e50;
+            margin-right: auto;
+            border-bottom-left-radius: 0.3rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+            opacity: 0.8;
+        }
+
+        .message.sent .message-time {
+            color: #fff;
+        }
+
+        .message.received .message-time {
+            color: #7f8c8d;
+        }
+
+        .input-container {
+            background-color: #fff;
+            padding: 1rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 2rem;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        #message-input:focus {
+            border-color: #3498db;
+        }
+
+        .send-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .send-button:hover {
+            background-color: #2980b9;
+        }
+
+        .send-button i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <a href="sharing.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 id="chat-title">Loading...</h1>
+        <p id="chat-subtitle">Connecting...</p>
+    </div>
+
+    <div id="messages-container" class="messages-container">
+        <!-- Messages will be loaded here -->
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button class="send-button" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
