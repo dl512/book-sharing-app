@@ -586,9 +586,9 @@
             background: white;
             border-radius: 12px;
             padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .chat-item:hover {
@@ -596,40 +596,75 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .chat-info h3 {
-            color: #2c3e50;
-            margin: 0 0 0.5rem 0;
-            font-size: 1.1rem;
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
         }
 
-        .chat-info p {
-            color: #7f8c8d;
+        .chat-header h3 {
             margin: 0;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .message-time {
+            color: #999;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
 
         .chat-preview {
-            margin-top: 0.5rem;
-            color: #34495e;
+            display: flex;
+            align-items: center;
+        }
+
+        .message-preview {
+            margin: 0;
+            color: #666;
             font-size: 0.9rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            max-width: 100%;
         }
 
-        .no-chats, .error-message {
+        .no-chats {
             text-align: center;
             padding: 2rem;
-            color: #7f8c8d;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .no-chats h2, .error-message h2 {
-            color: #2c3e50;
+        .no-chats h2 {
+            color: #333;
             margin-bottom: 1rem;
         }
 
+        .no-chats p {
+            color: #666;
+            margin: 0;
+        }
+
         .error-message {
-            color: #e74c3c;
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message h2 {
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+
+        .error-message p {
+            color: #666;
+            margin: 0.5rem 0;
         }
     </style>
 </head>
@@ -1015,18 +1050,13 @@
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
                 console.log('Current user ID:', userId);
-                console.log('Token:', token);
 
-                console.log('Fetching chat rooms...');
                 const response = await fetch('https://book-sharing-app.onrender.com/api/chatrooms/user', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json'
                     }
                 });
-
-                console.log('Response status:', response.status);
-                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -1058,13 +1088,17 @@
                             
                             return `
                                 <div class="chat-item" onclick="window.location.href='chat-room.html?id=${encodeURIComponent(room.id)}'">
-                                    <div class="chat-info">
-                                        <h3>${room.bookTitle}</h3>
-                                        <p>Chat with ${otherParticipant ? otherParticipant.userId : 'Unknown User'}</p>
+                                    <div class="chat-header">
+                                        <h3>${otherParticipant ? otherParticipant.userId : 'Unknown User'}</h3>
+                                        ${lastMessage ? `
+                                            <span class="message-time">${new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        ` : ''}
                                     </div>
-                                    <div class="chat-preview">
-                                        ${lastMessage ? lastMessage.text : 'No messages yet'}
-                                    </div>
+                                    ${lastMessage ? `
+                                        <div class="chat-preview">
+                                            <p class="message-preview">${lastMessage.text}</p>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             `;
                         }).join('')}

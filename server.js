@@ -60,7 +60,7 @@ const bookSchema = new mongoose.Schema(
       required: true,
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    chatRoomIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" }], // Updated to hold multiple chat room IDs
+    chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" }, // Changed from chatRoomIds to chatRoomId
   },
   { timestamps: true }
 );
@@ -133,14 +133,51 @@ function authenticateToken(req, res, next) {
 
 // Register user
 app.post("/api/auth/register", async (req, res) => {
-  const { userId, password } = req.body;
+  console.log("\n=== Registration Request Start ===");
+  console.log("Full request body:", JSON.stringify(req.body, null, 2));
+  const { userId, password, books } = req.body;
 
   try {
+    // Create user
+    console.log("\n1. Creating user...");
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ userId, password: hashedPassword });
-    await newUser.save();
-    res.status(201).send("User registered successfully");
+    const savedUser = await newUser.save();
+    console.log("User created with ID:", savedUser._id);
+
+    // If books are provided, create them
+    if (books && Array.isArray(books)) {
+      console.log("\n2. Processing books...");
+      console.log("Number of books to create:", books.length);
+      console.log("Books data:", JSON.stringify(books, null, 2));
+
+      // Create books one by one to ensure proper order and error handling
+      for (let i = 0; i < books.length; i++) {
+        const book = books[i];
+        console.log(`\nCreating book ${i + 1}:`, book.title);
+
+        const newBook = new Book({
+          title: book.title,
+          author: book.author,
+          description: book.description,
+          userId: savedUser._id,
+          likes: [],
+          chatRoomId: null, // Initialize with null since no chat room exists yet
+        });
+
+        console.log("Book object created:", newBook);
+        const savedBook = await newBook.save();
+        console.log("Book saved with ID:", savedBook._id);
+      }
+    } else {
+      console.log("\nNo books provided in registration");
+    }
+
+    console.log("\n=== Registration Request Complete ===");
+    res.status(201).send("User registered successfully with books");
   } catch (error) {
+    console.error("\n=== Registration Error ===");
+    console.error("Error details:", error);
     res.status(400).send("Error registering user: " + error.message);
   }
 });
@@ -175,7 +212,7 @@ app.get("/api/books", authenticateToken, async (req, res) => {
       .populate("userId", "userId")
       .populate("likes", "userId")
       .populate({
-        path: "chatRoomIds",
+        path: "chatRoomId",
         populate: [
           {
             path: "participants",
@@ -195,7 +232,7 @@ app.get("/api/books", authenticateToken, async (req, res) => {
     if (books.length > 0) {
       console.log(
         "Sample book chat rooms structure:",
-        JSON.stringify(books[0].chatRoomIds, null, 2)
+        JSON.stringify(books[0].chatRoomId, null, 2)
       );
     }
 
@@ -213,7 +250,7 @@ app.get("/api/books/my-books", authenticateToken, async (req, res) => {
     const books = await Book.find({ userId: req.user.id })
       .populate("userId", "userId")
       .populate("likes", "userId")
-      .populate("chatRoomIds");
+      .populate("chatRoomId");
 
     console.log("Found books:", books); // Debug log
     res.json(books);
@@ -281,15 +318,14 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     }
 
     // Update the book with the chat room ID
-    book.chatRoomIds.push(chatRoom._id);
+    book.chatRoomId = chatRoom._id;
     await book.save();
 
     // Return the book data including userId and chat room IDs
     res.json({
       message: "Book liked successfully",
       userId: book.userId.userId,
-      chatRoomIds: book.chatRoomIds,
-      chatRoomId: chatRoom._id,
+      chatRoomId: book.chatRoomId,
     });
   } catch (error) {
     console.error("Error liking book:", error);

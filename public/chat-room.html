@@ -29,27 +29,53 @@
             left: 0;
             right: 0;
             z-index: 100;
+            display: flex;
+            align-items: center;
+            height: 4rem;
+        }
+
+        .back-button {
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .back-button:hover {
+            background-color: #f5f6fa;
+        }
+
+        .back-button i {
+            font-size: 1.1rem;
+        }
+
+        .chat-title-container {
+            flex: 1;
+            margin-left: 0.5rem;
+            overflow: hidden;
         }
 
         .chat-header h1 {
             font-size: 1.2rem;
             color: #2c3e50;
-            margin-bottom: 0.2rem;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .chat-header p {
             font-size: 0.9rem;
             color: #7f8c8d;
-        }
-
-        .back-button {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #2c3e50;
-            text-decoration: none;
-            font-size: 1.2rem;
+            margin: 0;
         }
 
         .messages-container {
@@ -147,11 +173,13 @@
 </head>
 <body>
     <div class="chat-header">
-        <a href="sharing.html" class="back-button">
-            <i class="fas fa-arrow-left"></i>
+        <a href="sharing.html#chat" class="back-button">
+            <i class="fas fa-chevron-left"></i>
         </a>
-        <h1 id="chat-title">Loading...</h1>
-        <p id="chat-subtitle">Connecting...</p>
+        <div class="chat-title-container">
+            <h1 id="chat-title">Loading...</h1>
+            <p id="chat-subtitle">Connecting...</p>
+        </div>
     </div>
 
     <div id="messages-container" class="messages-container">
