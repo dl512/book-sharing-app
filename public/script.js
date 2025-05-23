@@ -202,9 +202,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = JSON.parse(atob(token.split(".")[1])).id; // Decode token to get user ID
     console.log("Current User ID:", userId); // Log current user ID
 
-    books.forEach((book) => {
-      const likeCount = Array.isArray(book.likes) ? book.likes.length : 0;
+    // Filter books to only show books from others that haven't been liked by the current user
+    const filteredBooks = books.filter((book) => {
+      const isFromOtherUser = book.userId._id !== userId;
+      const hasNotLiked = !book.likes.some((like) => like._id === userId);
+      return isFromOtherUser && hasNotLiked;
+    });
 
+    if (filteredBooks.length === 0) {
+      const noBooksMessage = document.createElement("div");
+      noBooksMessage.className = "no-books-message";
+      noBooksMessage.textContent = "No new books to discover at the moment.";
+      bookList.appendChild(noBooksMessage);
+      return;
+    }
+
+    filteredBooks.forEach((book) => {
       const bookContainer = document.createElement("div");
       bookContainer.className = "book-container";
 
@@ -223,55 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
       description.textContent = book.description;
       bookContainer.appendChild(description);
 
-      // Create like button only if the user is not the owner
-      if (book.userId._id !== userId) {
-        const hasLiked = book.likes.some((like) => like._id === userId);
-
-        if (!hasLiked) {
-          // Only create the like button if the user hasn't liked the book
-          const likeButton = document.createElement("button");
-          likeButton.textContent = `Like`;
-          likeButton.className = "like-button";
-
-          likeButton.onclick = () =>
-            likeBook(book._id, bookContainer, buttonContainer);
-
-          bookContainer.appendChild(likeButton);
-        }
-      }
-
-      // Logic for displaying chat room dropdown
-      if (book.userId._id === userId) {
-        const userIds = book.likes.map((like) => like.userId);
-        const chatRoomIds = book.chatRoomIds;
-
-        if (chatRoomIds.length > 0) {
-          displayChatRoomDropdown(
-            bookContainer,
-            buttonContainer,
-            chatRoomIds,
-            userIds
-          );
-        }
-      } else {
-        const hasLiked = book.likes.some((like) => like._id === userId);
-        if (hasLiked) {
-          const chatRoomIds = book.chatRoomIds.filter(
-            (room) =>
-              room.participants.includes(userId) &&
-              room.participants.includes(book.userId._id)
-          );
-
-          if (chatRoomIds.length > 0) {
-            displaySingleChatRoomDropdown(
-              bookContainer,
-              buttonContainer,
-              chatRoomIds[0]._id,
-              book.userId.userId
-            );
-          }
-        }
-      }
+      // Create like button
+      const likeButton = document.createElement("button");
+      likeButton.textContent = `Like`;
+      likeButton.className = "like-button";
+      likeButton.onclick = () =>
+        likeBook(book._id, bookContainer, buttonContainer);
+      bookContainer.appendChild(likeButton);
 
       bookList.appendChild(bookContainer);
     });
@@ -412,133 +383,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadChatRoomInfo() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const chatRoomId = urlParams.get("id");
         const token = localStorage.getItem("token");
-        if (!token) {
-          window.location.href = "login.html";
+        const userId = JSON.parse(atob(token.split(".")[1])).id;
+
+        if (!chatRoomId) {
+          console.error("No chat room ID provided");
           return;
         }
 
-        console.log("Loading chat room with ID:", currentChatRoomId);
-
-        // Add retry logic
-        let retries = 3;
-        let lastError = null;
-
-        while (retries > 0) {
-          try {
-            console.log(`Attempt ${4 - retries} to fetch chat room info...`);
-            const response = await fetch(
-              `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  Accept: "application/json",
-                },
-              }
-            );
-
-            console.log("Response status:", response.status);
-            console.log(
-              "Response headers:",
-              Object.fromEntries(response.headers.entries())
-            );
-
-            const contentType = response.headers.get("content-type");
-            console.log("Response content type:", contentType);
-
-            // First try to get the response as text
-            const responseText = await response.text();
-            console.log("Raw response:", responseText);
-
-            let responseData;
-            try {
-              // Then try to parse it as JSON
-              responseData = JSON.parse(responseText);
-              console.log("Response data:", responseData);
-            } catch (jsonError) {
-              console.error("Error parsing JSON response:", jsonError);
-              throw new Error("Invalid server response format");
-            }
-
-            if (!response.ok) {
-              // Handle specific error cases
-              if (response.status === 503) {
-                throw new Error(
-                  "Server is temporarily unavailable. Please try again in a few moments."
-                );
-              } else if (response.status === 404) {
-                throw new Error(
-                  "Chat room not found. It may have been deleted."
-                );
-              } else if (response.status === 403) {
-                throw new Error(
-                  "You are not authorized to access this chat room."
-                );
-              } else {
-                throw new Error(
-                  responseData.error || "Failed to fetch chat room info"
-                );
-              }
-            }
-
-            if (!responseData || !responseData.participants) {
-              console.error("Invalid chat room data:", responseData);
-              throw new Error("Invalid chat room data received");
-            }
-
-            const userId = JSON.parse(atob(token.split(".")[1])).id;
-            console.log("Current user ID:", userId);
-
-            // Get the other participant's info
-            otherParticipant = responseData.participants.find(
-              (p) => p._id !== userId
-            );
-            console.log("Other participant:", otherParticipant);
-
-            if (!otherParticipant) {
-              throw new Error("Could not find chat participant");
-            }
-
-            // Update header
-            document.getElementById("chat-title").textContent =
-              responseData.bookTitle || "Unknown Book";
-            document.getElementById(
-              "chat-subtitle"
-            ).textContent = `Chat with ${otherParticipant.userId}`;
-
-            // Load messages
-            await loadMessages();
-            return; // Success, exit the function
-          } catch (error) {
-            lastError = error;
-            console.log(`Retry attempt ${4 - retries} failed:`, error);
-            retries--;
-            if (retries > 0) {
-              console.log(`Waiting 1 second before retry ${4 - retries}...`);
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
+        const response = await fetch(
+          `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch chat room info");
         }
 
-        // If we get here, all retries failed
-        throw lastError;
+        const chatRoom = await response.json();
+        console.log("Chat room info:", chatRoom);
+
+        // Find the other participant's info
+        const otherParticipant = chatRoom.participants.find(
+          (p) => p._id !== userId
+        );
+
+        // Update the chat title with the other participant's name
+        document.getElementById("chat-title").textContent = otherParticipant
+          ? otherParticipant.userId
+          : "Unknown User";
+        document.getElementById("chat-subtitle").textContent = ""; // Remove online status
+
+        // Load messages
+        await loadMessages();
       } catch (error) {
         console.error("Error loading chat room info:", error);
-
-        // Show error message in the UI
-        const messagesContainer = document.getElementById("messages-container");
-        messagesContainer.innerHTML = `
-          <div style="text-align: center; padding: 20px; color: #e74c3c;">
-            <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
-            <p style="font-size: 18px; margin-bottom: 10px;">${error.message}</p>
-            <p style="font-size: 14px; color: #7f8c8d;">Redirecting back to chat list...</p>
-          </div>
-        `;
-
-        // Redirect back to chat list after a delay
-        setTimeout(() => {
-          window.location.href = "sharing.html";
-        }, 3000);
+        document.getElementById("chat-title").textContent = "Error";
+        document.getElementById("chat-subtitle").textContent =
+          "Failed to load chat";
       }
     }
 
