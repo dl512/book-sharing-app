@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const books = await response.json();
-    console.log("Books loaded:", books);
+    console.log("All books loaded:", books);
 
     const bookList = document.getElementById("book-list");
     bookList.innerHTML = ""; // Clear the list before adding new items
@@ -205,9 +205,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // Filter books to only show books from others that haven't been liked by the current user
     const filteredBooks = books.filter((book) => {
       const isFromOtherUser = book.userId._id !== userId;
-      const hasNotLiked = !book.likes.some((like) => like._id === userId);
+      // Check if any like in the likes array has a matching _id
+      const hasNotLiked = !book.likes.some(
+        (like) => like._id.toString() === userId
+      );
+
+      console.log("Book filtering:", {
+        bookId: book._id,
+        bookTitle: book.title,
+        isFromOtherUser,
+        hasNotLiked,
+        bookUserId: book.userId._id,
+        bookLikes: book.likes.map((like) => ({
+          id: like._id,
+          userId: like.userId,
+        })),
+      });
+
       return isFromOtherUser && hasNotLiked;
     });
+
+    console.log("Filtered books:", filteredBooks);
 
     if (filteredBooks.length === 0) {
       const noBooksMessage = document.createElement("div");
@@ -296,18 +314,87 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Load chat messages
+  // Global variables for chat room
+  let currentChatRoomId = null;
+  let currentBookTitle = null;
+  let otherParticipant = null;
+
+  // Chat Room Functions
+  function initializeChatRoom() {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentChatRoomId = decodeURIComponent(urlParams.get("id"));
+
+    if (!currentChatRoomId) {
+      console.error("No chat room ID provided in URL");
+      window.location.href = "sharing.html";
+      return;
+    }
+
+    // Validate chat room ID format
+    if (!/^[0-9a-fA-F]{24}$/.test(currentChatRoomId)) {
+      console.error("Invalid chat room ID format:", currentChatRoomId);
+      window.location.href = "sharing.html";
+      return;
+    }
+  }
+
+  async function loadChatRoomInfo() {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = JSON.parse(atob(token.split(".")[1])).id;
+
+      if (!currentChatRoomId) {
+        console.error("No chat room ID provided");
+        return;
+      }
+
+      const response = await fetch(
+        `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch chat room info");
+      }
+
+      const chatRoom = await response.json();
+      console.log("Chat room info:", chatRoom);
+
+      // Find the other participant's info
+      const otherParticipant = chatRoom.participants.find(
+        (p) => p._id !== userId
+      );
+
+      // Update the chat title with the other participant's name
+      document.getElementById("chat-title").textContent = otherParticipant
+        ? otherParticipant.userId
+        : "Unknown User";
+      document.getElementById("chat-subtitle").textContent = ""; // Remove online status
+
+      // Load messages
+      await loadMessages();
+    } catch (error) {
+      console.error("Error loading chat room info:", error);
+      document.getElementById("chat-title").textContent = "Error";
+      document.getElementById("chat-subtitle").textContent =
+        "Failed to load chat";
+    }
+  }
+
   async function loadMessages() {
     try {
       const token = localStorage.getItem("token");
-      const chatRoomId = new URLSearchParams(window.location.search).get("id");
 
-      if (!token || !chatRoomId) {
+      if (!token || !currentChatRoomId) {
         throw new Error("Missing token or chat room ID");
       }
 
       const response = await fetch(
-        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
+        `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -326,163 +413,128 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Fetched messages:", messages);
 
       const container = document.getElementById("messages-container");
-      container.innerHTML = messages
-        .map((message) => {
-          const isSent = message.senderId === userId;
-          const time = new Date(message.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+      if (!container) {
+        console.error("Messages container not found");
+        return;
+      }
 
-          return `
-            <div class="message ${isSent ? "sent" : "received"}">
-              <div class="message-content">${message.message}</div>
-              <div class="message-time">${time}</div>
-            </div>
-          `;
-        })
-        .join("");
+      // Clear existing messages
+      container.innerHTML = "";
+
+      // Add each message
+      messages.forEach((message) => {
+        const isSent = message.senderId === userId;
+        const time = new Date(message.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${isSent ? "sent" : "received"}`;
+        messageDiv.innerHTML = `
+          <div class="message-content">${message.message}</div>
+          <div class="message-time">${time}</div>
+        `;
+        container.appendChild(messageDiv);
+      });
 
       // Scroll to bottom
       container.scrollTop = container.scrollHeight;
     } catch (error) {
       console.error("Error loading messages:", error);
       const container = document.getElementById("messages-container");
-      container.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: #e74c3c;">
-          <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
-          <p style="font-size: 18px; margin-bottom: 10px;">Error loading messages</p>
-          <p style="font-size: 14px; color: #7f8c8d;">Please try again later</p>
-        </div>
-      `;
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #e74c3c;">
+            <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
+            <p style="font-size: 18px; margin-bottom: 10px;">Error loading messages</p>
+            <p style="font-size: 14px; color: #7f8c8d;">Please try again later</p>
+          </div>
+        `;
+      }
     }
   }
 
-  // Chat Room Functionality
-  if (window.location.pathname.includes("chat-room.html")) {
-    let currentChatRoomId = null;
-    let currentBookTitle = null;
-    let otherParticipant = null;
+  // Global function to send messages
+  async function sendMessage() {
+    const input = document.getElementById("message-input");
+    const message = input.value.trim();
 
-    // Get chat room ID from URL and decode it
-    const urlParams = new URLSearchParams(window.location.search);
-    currentChatRoomId = decodeURIComponent(urlParams.get("id"));
+    if (!message) return;
 
-    if (!currentChatRoomId) {
-      console.error("No chat room ID provided in URL");
-      window.location.href = "sharing.html";
-      return;
-    }
-
-    // Validate chat room ID format
-    if (!/^[0-9a-fA-F]{24}$/.test(currentChatRoomId)) {
-      console.error("Invalid chat room ID format:", currentChatRoomId);
-      window.location.href = "sharing.html";
-      return;
-    }
-
-    async function loadChatRoomInfo() {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const chatRoomId = urlParams.get("id");
-        const token = localStorage.getItem("token");
-        const userId = JSON.parse(atob(token.split(".")[1])).id;
-
-        if (!chatRoomId) {
-          console.error("No chat room ID provided");
-          return;
-        }
-
-        const response = await fetch(
-          `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch chat room info");
-        }
-
-        const chatRoom = await response.json();
-        console.log("Chat room info:", chatRoom);
-
-        // Find the other participant's info
-        const otherParticipant = chatRoom.participants.find(
-          (p) => p._id !== userId
-        );
-
-        // Update the chat title with the other participant's name
-        document.getElementById("chat-title").textContent = otherParticipant
-          ? otherParticipant.userId
-          : "Unknown User";
-        document.getElementById("chat-subtitle").textContent = ""; // Remove online status
-
-        // Load messages
-        await loadMessages();
-      } catch (error) {
-        console.error("Error loading chat room info:", error);
-        document.getElementById("chat-title").textContent = "Error";
-        document.getElementById("chat-subtitle").textContent =
-          "Failed to load chat";
-      }
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById("message-input");
-      const message = input.value.trim();
-
-      if (!message) return;
-
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to send message");
-        }
-
-        // Clear input
-        input.value = "";
-
-        // Reload messages
-        await loadMessages();
-      } catch (error) {
-        console.error("Error sending message:", error);
-        alert("Error sending message. Please try again.");
-      }
-    }
-
-    // Add event listener for Enter key
-    document
-      .getElementById("message-input")
-      .addEventListener("keypress", function (e) {
-        if (e.key === "Enter") {
-          sendMessage();
-        }
-      });
-
-    // Load chat room info when page loads
-    window.onload = () => {
+    try {
       const token = localStorage.getItem("token");
       if (!token) {
-        window.location.href = "login.html";
-      } else {
-        loadChatRoomInfo();
+        throw new Error("No authentication token found");
       }
-    };
+
+      if (!currentChatRoomId) {
+        throw new Error("No chat room ID found");
+      }
+
+      console.log("Sending message:", {
+        chatRoomId: currentChatRoomId,
+        message,
+        token: token.substring(0, 10) + "...", // Log partial token for debugging
+      });
+
+      const response = await fetch(
+        `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server response:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        });
+        throw new Error(
+          `Failed to send message: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // Clear input
+      input.value = "";
+
+      // Reload messages
+      await loadMessages();
+      console.log("Message sent successfully");
+    } catch (error) {
+      console.error("Error details:", error);
+      alert(`Error sending message: ${error.message}`);
+    }
+  }
+
+  // Initialize chat room when page loads
+  if (window.location.pathname.includes("chat-room.html")) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    } else {
+      initializeChatRoom();
+      loadChatRoomInfo();
+
+      // Add event listener for Enter key
+      document
+        .getElementById("message-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+
+      // Set up periodic message refresh
+      setInterval(loadMessages, 3000); // Refresh every 3 seconds
+    }
   }
 
   // Load books when the page is sharing.html
