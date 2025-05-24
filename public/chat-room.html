@@ -84,19 +84,24 @@
             margin-top: 4rem;
             margin-bottom: 4rem;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .message {
             max-width: 70%;
-            margin-bottom: 1rem;
             padding: 0.8rem;
             border-radius: 1rem;
             position: relative;
+            word-wrap: break-word;
+            clear: both;
         }
 
         .message.sent {
-            background-color: #3498db;
-            color: white;
+            background-color: #dcf8c6; /* WhatsApp-like green */
+            color: #2c3e50;
+            float: right;
             margin-left: auto;
             border-bottom-right-radius: 0.3rem;
         }
@@ -104,19 +109,26 @@
         .message.received {
             background-color: #fff;
             color: #2c3e50;
+            float: left;
             margin-right: auto;
             border-bottom-left-radius: 0.3rem;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 0.2rem;
+        }
+
         .message-time {
             font-size: 0.7rem;
-            margin-top: 0.3rem;
             opacity: 0.8;
+            text-align: right;
         }
 
         .message.sent .message-time {
-            color: #fff;
+            color: #7f8c8d;
         }
 
         .message.received .message-time {

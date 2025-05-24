@@ -210,7 +210,10 @@ app.get("/api/books", authenticateToken, async (req, res) => {
     console.log("Fetching books with chat rooms...");
     const books = await Book.find()
       .populate("userId", "userId")
-      .populate("likes", "userId")
+      .populate({
+        path: "likes",
+        select: "_id userId", // Select both _id and userId fields
+      })
       .populate({
         path: "chatRoomId",
         populate: [
@@ -228,11 +231,11 @@ app.get("/api/books", authenticateToken, async (req, res) => {
         ],
       });
 
-    // Log the structure of the first book's chat rooms for debugging
+    // Log the structure of the first book's likes for debugging
     if (books.length > 0) {
       console.log(
-        "Sample book chat rooms structure:",
-        JSON.stringify(books[0].chatRoomId, null, 2)
+        "Sample book likes structure:",
+        JSON.stringify(books[0].likes, null, 2)
       );
     }
 
@@ -310,18 +313,18 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
         messages: [
           {
             senderId: req.user.id,
-            message: `${req.user.userId} liked your book "${book.title}"! Let's begin chat!`,
+            message: `${req.user.userId} liked your book "${book.title}"! Let's chat!`,
           },
         ],
       });
       await chatRoom.save();
+
+      // Update the book with the chat room ID
+      book.chatRoomId = chatRoom._id;
+      await book.save();
     }
 
-    // Update the book with the chat room ID
-    book.chatRoomId = chatRoom._id;
-    await book.save();
-
-    // Return the book data including userId and chat room IDs
+    // Return the book data including userId and chat room ID
     res.json({
       message: "Book liked successfully",
       userId: book.userId.userId,
