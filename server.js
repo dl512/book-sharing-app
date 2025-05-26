@@ -61,6 +61,12 @@ const bookSchema = new mongoose.Schema(
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" }, // Changed from chatRoomIds to chatRoomId
+    sharingOptions: {
+      forSale: { type: Boolean, default: false },
+      forExchange: { type: Boolean, default: false },
+      forBorrow: { type: Boolean, default: false },
+      forDiscussion: { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 );
@@ -163,6 +169,12 @@ app.post("/api/auth/register", async (req, res) => {
           userId: savedUser._id,
           likes: [],
           chatRoomId: null, // Initialize with null since no chat room exists yet
+          sharingOptions: {
+            forSale: book.sharingOptions?.forSale || false,
+            forExchange: book.sharingOptions?.forExchange || false,
+            forBorrow: book.sharingOptions?.forBorrow || false,
+            forDiscussion: book.sharingOptions?.forDiscussion || false,
+          },
         });
 
         console.log("Book object created:", newBook);
@@ -267,19 +279,28 @@ app.get("/api/books/my-books", authenticateToken, async (req, res) => {
 
 // Share a book
 app.post("/api/books", authenticateToken, async (req, res) => {
-  const { title, author, description } = req.body;
-  const newBook = new Book({
-    title,
-    author,
-    description,
-    userId: req.user.id,
-  });
-
   try {
-    await newBook.save();
-    res.status(201).send("Book shared successfully");
+    const { title, author, description, sharingOptions } = req.body;
+    const userId = req.user.userId;
+
+    const book = new Book({
+      title,
+      author,
+      description,
+      userId,
+      sharingOptions: {
+        forSale: sharingOptions?.forSale || false,
+        forExchange: sharingOptions?.forExchange || false,
+        forBorrow: sharingOptions?.forBorrow || false,
+        forDiscussion: sharingOptions?.forDiscussion || false,
+      },
+    });
+
+    await book.save();
+    res.status(201).json(book);
   } catch (error) {
-    res.status(400).send("Error sharing book: " + error.message);
+    console.error("Error creating book:", error);
+    res.status(500).json({ message: "Error creating book" });
   }
 });
 

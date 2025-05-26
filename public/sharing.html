@@ -666,6 +666,22 @@
             color: #666;
             margin: 0.5rem 0;
         }
+
+        .sharing-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .sharing-option {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -739,8 +755,15 @@
                 const allBooks = await response.json();
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
-                // Filter out user's own books
-                books = allBooks.filter(book => book.userId._id !== userId);
+                
+                // Filter out user's own books and books that have been liked
+                books = allBooks.filter(book => {
+                    const isFromOtherUser = book.userId._id !== userId;
+                    const hasNotLiked = !book.likes.some(like => like._id.toString() === userId);
+                    return isFromOtherUser && hasNotLiked;
+                });
+
+                console.log('Filtered books:', books);
 
                 if (books.length === 0) {
                     showNoBooks();
@@ -772,11 +795,30 @@
             const book = books[currentBookIndex];
             const container = document.getElementById('books-container');
             
+            // Create sharing options HTML
+            const sharingOptionsHTML = Object.entries(book.sharingOptions || {})
+                .filter(([_, value]) => value)
+                .map(([key]) => {
+                    const labels = {
+                        forSale: '出售',
+                        forExchange: '漂出',
+                        forBorrow: '借出',
+                        forDiscussion: '同人傾下'
+                    };
+                    return `<span class="sharing-option">${labels[key]}</span>`;
+                })
+                .join('');
+            
             container.innerHTML = `
                 <div class="book-card" id="current-card">
                     <h2 class="book-title">${book.title}</h2>
                     <p class="book-author">by ${book.author}</p>
                     <p class="book-description">${book.description}</p>
+                    ${sharingOptionsHTML ? `
+                        <div class="sharing-options">
+                            ${sharingOptionsHTML}
+                        </div>
+                    ` : ''}
                     <p class="book-owner">Shared by: ${book.userId.userId}</p>
                 </div>
                 <div class="navigation-buttons">

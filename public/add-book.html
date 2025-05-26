@@ -127,6 +127,31 @@
                 padding: 1.5rem;
             }
         }
+
+        .sharing-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option label {
+            cursor: pointer;
+            font-size: 1rem;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +180,27 @@
                     <textarea id="description" name="description" required></textarea>
                     <div class="error-message" id="descriptionError"></div>
                 </div>
+                <div class="form-group">
+                    <label>Sharing Options</label>
+                    <div class="sharing-options">
+                        <div class="option">
+                            <input type="checkbox" id="forSale" name="forSale">
+                            <label for="forSale">出售 (For Sale)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forExchange" name="forExchange">
+                            <label for="forExchange">漂出 (For Exchange)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forBorrow" name="forBorrow">
+                            <label for="forBorrow">借出 (For Borrow)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forDiscussion" name="forDiscussion">
+                            <label for="forDiscussion">同人傾下 (For Discussion)</label>
+                        </div>
+                    </div>
+                </div>
                 <button type="submit" class="submit-button">Add Book</button>
             </form>
         </div>
@@ -170,6 +216,12 @@
             const title = document.getElementById('title').value.trim();
             const author = document.getElementById('author').value.trim();
             const description = document.getElementById('description').value.trim();
+            const sharingOptions = {
+                forSale: document.getElementById('forSale').checked,
+                forExchange: document.getElementById('forExchange').checked,
+                forBorrow: document.getElementById('forBorrow').checked,
+                forDiscussion: document.getElementById('forDiscussion').checked
+            };
 
             try {
                 const token = localStorage.getItem('token');
@@ -184,7 +236,12 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ title, author, description })
+                    body: JSON.stringify({
+                        title,
+                        author,
+                        description,
+                        sharingOptions
+                    })
                 });
 
                 if (!response.ok) {

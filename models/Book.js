@@ -11,7 +11,29 @@ const bookSchema = new mongoose.Schema(
       required: true,
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" }, // Add chatRoomId field
+    chatRoomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ChatRoom",
+      default: null,
+    },
+    sharingOptions: {
+      forSale: {
+        type: Boolean,
+        default: false,
+      },
+      forExchange: {
+        type: Boolean,
+        default: false,
+      },
+      forBorrow: {
+        type: Boolean,
+        default: false,
+      },
+      forDiscussion: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );

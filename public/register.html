@@ -163,6 +163,31 @@
                 padding: 0.8rem;
             }
         }
+
+        .sharing-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option label {
+            cursor: pointer;
+            font-size: 1rem;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -190,6 +215,27 @@
                 <input type="text" id="book-title" placeholder="Book Title" required>
                 <input type="text" id="book-author" placeholder="Author" required>
                 <textarea id="book-description" placeholder="Book Description" required></textarea>
+                <div class="form-group">
+                    <label>Sharing Options</label>
+                    <div class="sharing-options">
+                        <div class="option">
+                            <input type="checkbox" id="forSale" name="forSale">
+                            <label for="forSale">出售 (For Sale)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forExchange" name="forExchange">
+                            <label for="forExchange">漂出 (For Exchange)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forBorrow" name="forBorrow">
+                            <label for="forBorrow">借出 (For Borrow)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forDiscussion" name="forDiscussion">
+                            <label for="forDiscussion">同人傾下 (For Discussion)</label>
+                        </div>
+                    </div>
+                </div>
                 <button type="button" id="add-book">Add Book</button>
             </form>
             <div id="books-preview"></div>
