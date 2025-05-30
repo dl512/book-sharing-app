@@ -742,6 +742,7 @@
                     return;
                 }
 
+                console.log('Fetching books...');
                 const response = await fetch('https://book-sharing-app.onrender.com/api/books', {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -749,17 +750,29 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch books');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch books');
                 }
 
                 const allBooks = await response.json();
+                console.log('All books received:', allBooks);
+                
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
+                console.log('Current user ID:', userId);
                 
                 // Filter out user's own books and books that have been liked
                 books = allBooks.filter(book => {
                     const isFromOtherUser = book.userId._id !== userId;
-                    const hasNotLiked = !book.likes.some(like => like._id.toString() === userId);
+                    const hasNotLiked = !book.likes.some(like => like._id === userId);
+                    console.log('Book filtering:', {
+                        bookId: book._id,
+                        bookTitle: book.title,
+                        isFromOtherUser,
+                        hasNotLiked,
+                        bookUserId: book.userId._id,
+                        bookLikes: book.likes
+                    });
                     return isFromOtherUser && hasNotLiked;
                 });
 
@@ -771,8 +784,15 @@
                     showCurrentBook();
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error fetching books. Please try again.');
+                console.error('Error fetching books:', error);
+                const container = document.getElementById('books-container');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <h2>Error Loading Books</h2>
+                        <p>${error.message}</p>
+                        <p>Please try refreshing the page.</p>
+                    </div>
+                `;
             }
         }
 

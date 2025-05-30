@@ -223,50 +223,53 @@ app.post("/api/auth/login", async (req, res) => {
 // Get list of books
 app.get("/api/books", authenticateToken, async (req, res) => {
   try {
-    console.log("Fetching books with chat rooms...");
-    const books = await Book.find()
-      .populate("userId", "userId")
-      .populate({
-        path: "likes",
-        select: "_id userId",
-      })
-      .populate({
-        path: "chatRoomId",
-        populate: [
-          {
-            path: "participants",
-            select: "userId",
-          },
-          {
-            path: "messages",
-            populate: {
-              path: "senderId",
-              select: "userId",
-            },
-          },
-        ],
-      });
+    console.log("\n=== Fetching Books Request Start ===");
+    console.log("User ID:", req.user.id);
 
-    // Log the structure of the first book for debugging
-    if (books.length > 0) {
-      console.log(
-        "Sample book structure:",
-        JSON.stringify(
-          {
-            title: books[0].title,
-            sharingOptions: books[0].sharingOptions,
-            likes: books[0].likes,
-          },
-          null,
-          2
-        )
-      );
-    }
+    const books = await Book.find().populate("userId", "userId").populate({
+      path: "likes",
+      select: "_id userId",
+    });
 
-    res.json(books);
+    console.log("Found books:", books.length);
+
+    // Format the response to include necessary information
+    const formattedBooks = books.map((book) => ({
+      _id: book._id,
+      title: book.title,
+      author: book.author,
+      description: book.description,
+      userId: {
+        _id: book.userId._id,
+        userId: book.userId.userId,
+      },
+      likes: book.likes.map((like) => ({
+        _id: like._id,
+        userId: like.userId,
+      })),
+      sharingOptions: book.sharingOptions || {
+        forSale: false,
+        forExchange: false,
+        forBorrow: false,
+        forDiscussion: false,
+      },
+      createdAt: book.createdAt,
+      updatedAt: book.updatedAt,
+    }));
+
+    console.log("Sending formatted books response");
+    console.log("=== Fetching Books Request Complete ===\n");
+
+    res.json(formattedBooks);
   } catch (error) {
-    console.error("Error fetching books:", error);
-    res.status(500).json({ error: "Error fetching books: " + error.message });
+    console.error("\n=== Fetching Books Error ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("=====================\n");
+    res.status(500).json({
+      error: "Error fetching books",
+      message: error.message,
+    });
   }
 });
 
