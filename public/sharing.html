@@ -930,18 +930,26 @@
                 const book = books[currentBookIndex];
                 const token = localStorage.getItem('token');
                 
+                console.log('Liking book:', {
+                    bookId: book._id,
+                    title: book.title
+                });
+
                 const response = await fetch(`https://book-sharing-app.onrender.com/api/books/${book._id}/like`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
+                const result = await response.json();
+                console.log('Server response:', result);
+
                 if (!response.ok) {
-                    throw new Error('Failed to like book');
+                    throw new Error(result.message || 'Failed to like book');
                 }
 
-                const result = await response.json();
                 console.log('Book liked successfully:', result);
 
                 // Animate the card
@@ -955,7 +963,14 @@
                 }, 300);
             } catch (error) {
                 console.error('Error liking book:', error);
-                alert('Error liking book. Please try again.');
+                const container = document.getElementById('books-container');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <h2>Error Liking Book</h2>
+                        <p>${error.message}</p>
+                        <p>Please try again.</p>
+                    </div>
+                `;
             }
         }
 

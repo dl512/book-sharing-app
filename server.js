@@ -328,10 +328,17 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     console.log("Book ID:", bookId);
     console.log("User ID:", req.user.id);
 
-    const book = await Book.findById(bookId).populate("userId", "userId");
+    // Find the book and populate necessary fields
+    const book = await Book.findById(bookId)
+      .populate("userId", "userId")
+      .populate("likes", "userId");
+
     if (!book) {
       console.error("Book not found with ID:", bookId);
-      return res.status(404).send("Book not found");
+      return res.status(404).json({
+        error: "Book not found",
+        message: "The requested book could not be found",
+      });
     }
 
     console.log("Found book:", {
@@ -341,9 +348,12 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     });
 
     // Check if already liked
-    if (book.likes.includes(req.user.id)) {
+    if (book.likes.some((like) => like._id.toString() === req.user.id)) {
       console.log("User has already liked this book");
-      return res.status(400).send("You have already liked this book");
+      return res.status(400).json({
+        error: "Already liked",
+        message: "You have already liked this book",
+      });
     }
 
     // Add user to likes
@@ -364,6 +374,17 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     const currentUser = await User.findById(req.user.id);
     const bookOwner = await User.findById(book.userId._id);
 
+    if (!currentUser || !bookOwner) {
+      console.error("Could not find users:", {
+        currentUser: !!currentUser,
+        bookOwner: !!bookOwner,
+      });
+      return res.status(500).json({
+        error: "User not found",
+        message: "Could not find user information",
+      });
+    }
+
     // Check if users already have a chat relationship
     const existingChatPartner = currentUser.chatPartners.find(
       (partner) => partner.partnerId.toString() === book.userId._id.toString()
@@ -372,10 +393,18 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     if (existingChatPartner) {
       console.log("Found existing chat relationship");
       chatRoom = await ChatRoom.findById(existingChatPartner.chatRoomId);
+      if (!chatRoom) {
+        console.error("Chat room not found despite existing relationship");
+        return res.status(500).json({
+          error: "Chat room not found",
+          message: "Could not find the existing chat room",
+        });
+      }
     } else {
       console.log("Creating new chat relationship");
       // Create new chat room
       chatRoom = new ChatRoom({
+        bookId: book._id,
         participants: [req.user.id, book.userId._id],
         messages: [notificationMessage],
       });
@@ -400,14 +429,16 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     await chatRoom.save();
 
     // Fetch the final state of the chat room
-    const finalChatRoom = await ChatRoom.findById(chatRoom._id).populate(
-      "messages.senderId",
-      "userId"
-    );
+    const finalChatRoom = await ChatRoom.findById(chatRoom._id)
+      .populate("messages.senderId", "userId")
+      .populate("participants", "userId");
 
     if (!finalChatRoom) {
       console.error("Failed to fetch final chat room state");
-      throw new Error("Could not fetch chat room state");
+      return res.status(500).json({
+        error: "Chat room error",
+        message: "Could not fetch chat room state",
+      });
     }
 
     console.log("\nFinal chat room state:", {
@@ -425,7 +456,7 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
       chatRoomId: finalChatRoom._id.toString(),
       messages: finalChatRoom.messages.map((msg) => ({
         text: msg.message,
-        senderId: msg.senderId,
+        senderId: msg.senderId.userId,
         timestamp: msg.createdAt,
       })),
     };
@@ -437,7 +468,10 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
     console.error("Error details:", error);
     console.error("Stack trace:", error.stack);
     console.error("=====================\n");
-    res.status(500).send("Error liking book: " + error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message || "An unexpected error occurred",
+    });
   }
 });
 
