@@ -91,51 +91,46 @@
 
         .message {
             max-width: 70%;
-            padding: 0.8rem;
-            border-radius: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 15px;
             position: relative;
-            word-wrap: break-word;
             clear: both;
         }
 
         .message.sent {
-            background-color: #dcf8c6; /* WhatsApp-like green */
-            color: #2c3e50;
             float: right;
+            background-color: #dcf8c6;
             margin-left: auto;
-            border-bottom-right-radius: 0.3rem;
+            border-bottom-right-radius: 5px;
         }
 
         .message.received {
-            background-color: #fff;
-            color: #2c3e50;
             float: left;
+            background-color: white;
             margin-right: auto;
-            border-bottom-left-radius: 0.3rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border-bottom-left-radius: 5px;
         }
 
         .message-content {
-            font-size: 0.95rem;
-            line-height: 1.4;
-            margin-bottom: 0.2rem;
+            word-break: break-word;
         }
 
         .message-time {
             font-size: 0.7rem;
-            opacity: 0.8;
+            color: #999;
+            margin-top: 0.3rem;
             text-align: right;
         }
 
         .message.sent .message-time {
-            color: #7f8c8d;
+            text-align: right;
         }
 
         .message.received .message-time {
-            color: #7f8c8d;
+            text-align: left;
         }
 
-        .input-container {
+        .message-input-container {
             background-color: #fff;
             padding: 1rem;
             position: fixed;
@@ -147,7 +142,7 @@
             gap: 0.5rem;
         }
 
-        #message-input {
+        .message-input {
             flex: 1;
             padding: 0.8rem;
             border: 1px solid #ddd;
@@ -156,7 +151,7 @@
             font-size: 1rem;
         }
 
-        #message-input:focus {
+        .message-input:focus {
             border-color: #3498db;
         }
 
@@ -198,8 +193,8 @@
         <!-- Messages will be loaded here -->
     </div>
 
-    <div class="input-container">
-        <input type="text" id="message-input" placeholder="Type a message...">
+    <div class="message-input-container">
+        <input type="text" id="message-input" class="message-input" placeholder="Type a message...">
         <button class="send-button" onclick="sendMessage()">
             <i class="fas fa-paper-plane"></i>
         </button>

@@ -294,14 +294,20 @@
             const title = document.getElementById('book-title').value;
             const author = document.getElementById('book-author').value;
             const description = document.getElementById('book-description').value;
+            const sharingOptions = {
+                forSale: document.getElementById('forSale').checked,
+                forExchange: document.getElementById('forExchange').checked,
+                forBorrow: document.getElementById('forBorrow').checked,
+                forDiscussion: document.getElementById('forDiscussion').checked
+            };
 
             if (!title || !author || !description) {
                 alert('Please fill in all book details');
                 return;
             }
 
-            console.log('\nAdding book:', { title, author, description });
-            const book = { title, author, description };
+            console.log('\nAdding book:', { title, author, description, sharingOptions });
+            const book = { title, author, description, sharingOptions };
             books.push(book);
             addBookPreview(book);
 
@@ -309,6 +315,10 @@
             document.getElementById('book-title').value = '';
             document.getElementById('book-author').value = '';
             document.getElementById('book-description').value = '';
+            document.getElementById('forSale').checked = false;
+            document.getElementById('forExchange').checked = false;
+            document.getElementById('forBorrow').checked = false;
+            document.getElementById('forDiscussion').checked = false;
 
             // Update progress
             currentBook++;

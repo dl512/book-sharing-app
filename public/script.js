@@ -385,132 +385,108 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function displayMessage(message) {
+    const messagesContainer = document.getElementById("messages-container");
+    const token = localStorage.getItem("token");
+    const currentUserId = JSON.parse(atob(token.split(".")[1])).id;
+
+    const messageElement = document.createElement("div");
+    const isCurrentUser = message.senderId._id === currentUserId;
+    messageElement.className = `message ${isCurrentUser ? "sent" : "received"}`;
+
+    const time = new Date(message.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    messageElement.innerHTML = `
+        <div class="message-content">${message.message}</div>
+        <div class="message-time">${time}</div>
+    `;
+
+    messagesContainer.appendChild(messageElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
   async function loadMessages() {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "login.html";
+        return;
+      }
 
-      if (!token || !currentChatRoomId) {
-        throw new Error("Missing token or chat room ID");
+      const chatRoomId = new URLSearchParams(window.location.search).get("id");
+      if (!chatRoomId) {
+        console.error("No chat room ID provided");
+        return;
       }
 
       const response = await fetch(
-        `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
+        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            Accept: "application/json",
           },
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to load messages");
+        throw new Error("Failed to fetch messages");
       }
 
       const messages = await response.json();
-      const userId = JSON.parse(atob(token.split(".")[1])).id;
+      const messagesContainer = document.getElementById("messages-container");
+      messagesContainer.innerHTML = ""; // Clear existing messages
 
-      console.log("Fetched messages:", messages);
-
-      const container = document.getElementById("messages-container");
-      if (!container) {
-        console.error("Messages container not found");
-        return;
-      }
-
-      // Clear existing messages
-      container.innerHTML = "";
-
-      // Add each message
       messages.forEach((message) => {
-        const isSent = message.senderId === userId;
-        const time = new Date(message.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        const messageDiv = document.createElement("div");
-        messageDiv.className = `message ${isSent ? "sent" : "received"}`;
-        messageDiv.innerHTML = `
-          <div class="message-content">${message.message}</div>
-          <div class="message-time">${time}</div>
-        `;
-        container.appendChild(messageDiv);
+        displayMessage(message);
       });
-
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
     } catch (error) {
       console.error("Error loading messages:", error);
-      const container = document.getElementById("messages-container");
-      if (container) {
-        container.innerHTML = `
-          <div style="text-align: center; padding: 20px; color: #e74c3c;">
-            <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
-            <p style="font-size: 18px; margin-bottom: 10px;">Error loading messages</p>
-            <p style="font-size: 14px; color: #7f8c8d;">Please try again later</p>
-          </div>
-        `;
-      }
     }
   }
 
-  // Global function to send messages
   async function sendMessage() {
-    const input = document.getElementById("message-input");
-    const message = input.value.trim();
-
-    if (!message) return;
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("No authentication token found");
+        window.location.href = "login.html";
+        return;
       }
 
-      if (!currentChatRoomId) {
-        throw new Error("No chat room ID found");
+      const chatRoomId = new URLSearchParams(window.location.search).get("id");
+      if (!chatRoomId) {
+        console.error("No chat room ID provided");
+        return;
       }
 
-      console.log("Sending message:", {
-        chatRoomId: currentChatRoomId,
-        message,
-        token: token.substring(0, 10) + "...", // Log partial token for debugging
-      });
+      const messageInput = document.getElementById("message-input");
+      const message = messageInput.value.trim();
+
+      if (!message) return;
 
       const response = await fetch(
-        `https://book-sharing-app.onrender.com/api/chatrooms/${currentChatRoomId}/messages`,
+        `https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ message }),
         }
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server response:", {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-        });
-        throw new Error(
-          `Failed to send message: ${response.status} ${response.statusText}`
-        );
+        throw new Error("Failed to send message");
       }
 
-      // Clear input
-      input.value = "";
-
-      // Reload messages
-      await loadMessages();
-      console.log("Message sent successfully");
+      messageInput.value = "";
+      await loadMessages(); // Reload messages to show the new message
     } catch (error) {
-      console.error("Error details:", error);
-      alert(`Error sending message: ${error.message}`);
+      console.error("Error sending message:", error);
+      alert("Error sending message. Please try again.");
     }
   }
 

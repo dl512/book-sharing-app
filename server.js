@@ -44,6 +44,12 @@ app.use((req, res, next) => {
 const userSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true, minlength: 3 },
   password: { type: String, required: true, minlength: 6 },
+  chatPartners: [
+    {
+      partnerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" },
+    },
+  ],
 });
 
 const User = mongoose.model("User", userSchema);
@@ -60,7 +66,6 @@ const bookSchema = new mongoose.Schema(
       required: true,
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom" }, // Changed from chatRoomIds to chatRoomId
     sharingOptions: {
       forSale: { type: Boolean, default: false },
       forExchange: { type: Boolean, default: false },
@@ -168,7 +173,6 @@ app.post("/api/auth/register", async (req, res) => {
           description: book.description,
           userId: savedUser._id,
           likes: [],
-          chatRoomId: null, // Initialize with null since no chat room exists yet
           sharingOptions: {
             forSale: book.sharingOptions?.forSale || false,
             forExchange: book.sharingOptions?.forExchange || false,
@@ -224,7 +228,7 @@ app.get("/api/books", authenticateToken, async (req, res) => {
       .populate("userId", "userId")
       .populate({
         path: "likes",
-        select: "_id userId", // Select both _id and userId fields
+        select: "_id userId",
       })
       .populate({
         path: "chatRoomId",
@@ -243,11 +247,19 @@ app.get("/api/books", authenticateToken, async (req, res) => {
         ],
       });
 
-    // Log the structure of the first book's likes for debugging
+    // Log the structure of the first book for debugging
     if (books.length > 0) {
       console.log(
-        "Sample book likes structure:",
-        JSON.stringify(books[0].likes, null, 2)
+        "Sample book structure:",
+        JSON.stringify(
+          {
+            title: books[0].title,
+            sharingOptions: books[0].sharingOptions,
+            likes: books[0].likes,
+          },
+          null,
+          2
+        )
       );
     }
 
@@ -309,50 +321,119 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
   const bookId = req.params.id;
 
   try {
+    console.log("\n=== Like Book Request Start ===");
+    console.log("Book ID:", bookId);
+    console.log("User ID:", req.user.id);
+
     const book = await Book.findById(bookId).populate("userId", "userId");
-    if (!book) return res.status(404).send("Book not found");
+    if (!book) {
+      console.error("Book not found with ID:", bookId);
+      return res.status(404).send("Book not found");
+    }
+
+    console.log("Found book:", {
+      id: book._id,
+      title: book.title,
+      ownerId: book.userId._id,
+    });
 
     // Check if already liked
     if (book.likes.includes(req.user.id)) {
+      console.log("User has already liked this book");
       return res.status(400).send("You have already liked this book");
     }
 
     // Add user to likes
     book.likes.push(req.user.id);
     await book.save();
+    console.log("Book likes updated");
 
-    // Check if chat room already exists between these users
-    let chatRoom = await ChatRoom.findOne({
-      participants: { $all: [req.user.id, book.userId._id] },
-    });
+    // Create notification message
+    const notificationMessage = {
+      senderId: req.user.id,
+      message: `${req.user.userId} liked your book "${book.title}"! Let's chat!`,
+      createdAt: new Date(),
+    };
+    console.log("Notification message created:", notificationMessage);
 
-    // If no chat room exists, create a new one
-    if (!chatRoom) {
+    // Find or create chat room based on user relationships
+    let chatRoom;
+    const currentUser = await User.findById(req.user.id);
+    const bookOwner = await User.findById(book.userId._id);
+
+    // Check if users already have a chat relationship
+    const existingChatPartner = currentUser.chatPartners.find(
+      (partner) => partner.partnerId.toString() === book.userId._id.toString()
+    );
+
+    if (existingChatPartner) {
+      console.log("Found existing chat relationship");
+      chatRoom = await ChatRoom.findById(existingChatPartner.chatRoomId);
+    } else {
+      console.log("Creating new chat relationship");
+      // Create new chat room
       chatRoom = new ChatRoom({
-        bookId,
         participants: [req.user.id, book.userId._id],
-        messages: [
-          {
-            senderId: req.user.id,
-            message: `${req.user.userId} liked your book "${book.title}"! Let's chat!`,
-          },
-        ],
+        messages: [notificationMessage],
       });
       await chatRoom.save();
 
-      // Update the book with the chat room ID
-      book.chatRoomId = chatRoom._id;
-      await book.save();
+      // Update both users' chatPartners
+      currentUser.chatPartners.push({
+        partnerId: book.userId._id,
+        chatRoomId: chatRoom._id,
+      });
+      await currentUser.save();
+
+      bookOwner.chatPartners.push({
+        partnerId: req.user.id,
+        chatRoomId: chatRoom._id,
+      });
+      await bookOwner.save();
     }
 
-    // Return the book data including userId and chat room ID
-    res.json({
+    // Add notification message to chat room
+    chatRoom.messages.push(notificationMessage);
+    await chatRoom.save();
+
+    // Fetch the final state of the chat room
+    const finalChatRoom = await ChatRoom.findById(chatRoom._id).populate(
+      "messages.senderId",
+      "userId"
+    );
+
+    if (!finalChatRoom) {
+      console.error("Failed to fetch final chat room state");
+      throw new Error("Could not fetch chat room state");
+    }
+
+    console.log("\nFinal chat room state:", {
+      id: finalChatRoom._id,
+      messageCount: finalChatRoom.messages.length,
+      lastMessage: finalChatRoom.messages[finalChatRoom.messages.length - 1],
+    });
+
+    console.log("=== Like Book Request Complete ===\n");
+
+    // Return the response
+    const response = {
       message: "Book liked successfully",
       userId: book.userId.userId,
-      chatRoomId: book.chatRoomId,
-    });
+      chatRoomId: finalChatRoom._id.toString(),
+      messages: finalChatRoom.messages.map((msg) => ({
+        text: msg.message,
+        senderId: msg.senderId,
+        timestamp: msg.createdAt,
+      })),
+    };
+
+    console.log("Sending response:", response);
+    return res.json(response);
   } catch (error) {
-    console.error("Error liking book:", error);
+    console.error("\n=== Like Book Error ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("=====================\n");
     res.status(500).send("Error liking book: " + error.message);
   }
 });
@@ -426,14 +507,25 @@ app.get("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
   const chatRoomId = req.params.id;
 
   try {
-    const chatRoom = await ChatRoom.findById(chatRoomId).populate(
-      "messages.senderId",
-      "userId"
-    );
-    if (!chatRoom)
+    const chatRoom = await ChatRoom.findById(chatRoomId).populate({
+      path: "messages.senderId",
+      select: "userId",
+    });
+
+    if (!chatRoom) {
       return res.status(404).json({ error: "Chat room not found" });
-    res.json(chatRoom.messages);
+    }
+
+    // Format messages to include all necessary fields
+    const formattedMessages = chatRoom.messages.map((msg) => ({
+      text: msg.message,
+      senderId: msg.senderId,
+      timestamp: msg.createdAt,
+    }));
+
+    res.json(formattedMessages);
   } catch (error) {
+    console.error("Error fetching messages:", error);
     res
       .status(500)
       .json({ error: "Error fetching messages: " + error.message });
@@ -470,6 +562,10 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
       .populate({
         path: "bookId",
         select: "title",
+      })
+      .populate({
+        path: "messages.senderId",
+        select: "userId",
       });
 
     console.log("Found chat room:", chatRoom ? "Yes" : "No");
@@ -502,7 +598,11 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
         _id: p._id,
         userId: p.userId,
       })),
-      messages: chatRoom.messages || [],
+      messages: chatRoom.messages.map((msg) => ({
+        text: msg.message,
+        senderId: msg.senderId,
+        timestamp: msg.createdAt,
+      })),
     };
 
     console.log("Sending chat room response:", response);
@@ -523,17 +623,30 @@ app.post("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
 
   try {
     const chatRoom = await ChatRoom.findById(chatRoomId);
-    if (!chatRoom)
+    if (!chatRoom) {
       return res.status(404).json({ error: "Chat room not found" });
+    }
 
-    // Push the message with userId into the messages array
-    chatRoom.messages.push({
+    // Create new message with timestamp
+    const newMessage = {
       senderId: req.user.id,
-      message,
-    });
+      message: message,
+      createdAt: new Date(),
+    };
 
+    // Push the message into the messages array
+    chatRoom.messages.push(newMessage);
     await chatRoom.save();
-    res.json({ message: "Message sent successfully" });
+
+    // Return the complete message object
+    res.json({
+      message: "Message sent successfully",
+      newMessage: {
+        text: newMessage.message,
+        senderId: newMessage.senderId,
+        timestamp: newMessage.createdAt,
+      },
+    });
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ error: "Error sending message: " + error.message });
