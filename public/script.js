@@ -388,10 +388,18 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayMessage(message) {
     const messagesContainer = document.getElementById("messages-container");
     const token = localStorage.getItem("token");
-    const currentUserId = JSON.parse(atob(token.split(".")[1])).id;
+    const currentUser = JSON.parse(atob(token.split(".")[1]));
+
+    console.log("Message data:", {
+      message,
+      currentUser,
+      senderId: message.senderId,
+      isMatch: message.senderId === currentUser.userId,
+    });
 
     const messageElement = document.createElement("div");
-    const isCurrentUser = message.senderId === currentUserId;
+    // Compare the senderId with the current user's userId
+    const isCurrentUser = message.senderId === currentUser.userId;
     messageElement.className = `message ${isCurrentUser ? "sent" : "received"}`;
 
     const time = new Date(message.timestamp).toLocaleTimeString([], {

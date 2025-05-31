@@ -40,14 +40,15 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
+            padding: 0;
             margin: 1rem 0;
             position: relative;
-            min-height: 400px;
+            min-height: 500px;
             display: flex;
             flex-direction: column;
             transform-origin: center;
             transition: transform 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
         }
 
         .book-card.swiping {
@@ -88,21 +89,59 @@
             }
         }
 
+        .book-image {
+            width: 100%;
+            height: 400px;
+            background-color: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .book-image .placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .book-image .placeholder i {
+            font-size: 4rem;
+            color: #adb5bd;
+        }
+
+        .book-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
         .book-title {
             font-size: 1.8rem;
             color: #2c3e50;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .book-author {
             font-size: 1.2rem;
             color: #7f8c8d;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .book-description {
             color: #34495e;
             line-height: 1.6;
+            margin-bottom: 1rem;
             flex-grow: 1;
         }
 
@@ -245,9 +284,46 @@
         .my-book-card {
             background: white;
             border-radius: 15px;
-            padding: 1.5rem;
+            padding: 0;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .my-book-image {
+            width: 100%;
+            height: 300px;
+            background-color: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .my-book-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .my-book-image .placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .my-book-image .placeholder i {
+            font-size: 4rem;
+            color: #adb5bd;
+        }
+
+        .my-book-content {
+            padding: 1.5rem;
         }
 
         .my-book-title {
@@ -688,45 +764,51 @@
     <button class="logout-button" onclick="logout()">Logout</button>
     <div class="container">
         <!-- Discover Section -->
-        <section id="discover-section" class="section active">
+        <div id="discover-section" class="section active">
             <div class="header">
-                <h1>Discover</h1>
+                <h1>Discover Books</h1>
             </div>
-            <div id="books-container"></div>
-        </section>
+            <div id="book-list">
+                <!-- Books will be loaded here -->
+            </div>
+        </div>
 
         <!-- Chat Section -->
-        <section id="chat-section" class="section">
+        <div id="chat-section" class="section">
             <div class="header">
-                <h1>Chat</h1>
+                <h1>Chats</h1>
             </div>
-            <div id="chat-rooms-container" class="chat-rooms-list"></div>
-        </section>
+            <div id="chat-rooms-container">
+                <!-- Chat rooms will be loaded here -->
+            </div>
+        </div>
 
         <!-- Profile Section -->
-        <section id="profile-section" class="section">
+        <div id="profile-section" class="section">
             <div class="header">
-                <h1>My Profile</h1>
+                <h1>My Books</h1>
             </div>
-            <div id="my-books-container"></div>
-        </section>
+            <div id="my-books-container">
+                <!-- User's books will be loaded here -->
+            </div>
+        </div>
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <a href="#" class="nav-item active" onclick="showSection('discover-section')">
+    <div class="bottom-nav">
+        <a href="#discover-section" class="nav-item active" onclick="showSection('discover-section')">
             <i class="fas fa-compass"></i>
             <span>Discover</span>
         </a>
-        <a href="#" class="nav-item" onclick="showSection('chat-section')">
+        <a href="#chat-section" class="nav-item" onclick="showSection('chat-section')">
             <i class="fas fa-comments"></i>
-            <span>Chat</span>
+            <span>Chats</span>
         </a>
-        <a href="#" class="nav-item" onclick="showSection('profile-section')">
+        <a href="#profile-section" class="nav-item" onclick="showSection('profile-section')">
             <i class="fas fa-user"></i>
             <span>Profile</span>
         </a>
-    </nav>
+    </div>
 
     <script>
         let currentBookIndex = 0;
@@ -797,7 +879,7 @@
         }
 
         function showNoBooks() {
-            const container = document.getElementById('books-container');
+            const container = document.getElementById('book-list');
             container.innerHTML = `
                 <div class="no-books">
                     <h2>No Books Available</h2>
@@ -813,7 +895,7 @@
             }
 
             const book = books[currentBookIndex];
-            const container = document.getElementById('books-container');
+            const container = document.getElementById('book-list');
             
             // Create sharing options HTML
             const sharingOptionsHTML = Object.entries(book.sharingOptions || {})
@@ -831,15 +913,24 @@
             
             container.innerHTML = `
                 <div class="book-card" id="current-card">
-                    <h2 class="book-title">${book.title}</h2>
-                    <p class="book-author">by ${book.author}</p>
-                    <p class="book-description">${book.description}</p>
-                    ${sharingOptionsHTML ? `
-                        <div class="sharing-options">
-                            ${sharingOptionsHTML}
-                        </div>
-                    ` : ''}
-                    <p class="book-owner">Shared by: ${book.userId.userId}</p>
+                    <div class="book-image">
+                        ${book.photoUrl ? 
+                            `<img src="${book.photoUrl}" alt="${book.title}">` :
+                            `<div class="placeholder">
+                                <i class="fas fa-book"></i>
+                            </div>`
+                        }
+                    </div>
+                    <div class="book-info">
+                        <h2 class="book-title">${book.title}</h2>
+                        <p class="book-author">by ${book.author}</p>
+                        <p class="book-description">${book.description}</p>
+                        ${sharingOptionsHTML ? `
+                            <div class="sharing-options">
+                                ${sharingOptionsHTML}
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
                 <div class="navigation-buttons">
                     <button class="nav-button skip" onclick="skipBook()">
@@ -980,25 +1071,50 @@
         }
 
         function showSection(sectionId) {
+            console.log('Switching to section:', sectionId);
+            
             // Hide all sections
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
             // Show selected section
-            document.getElementById(sectionId).classList.add('active');
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
             
             // Update navigation items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`.nav-item[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            const navItem = document.querySelector(`.nav-item[onclick="showSection('${sectionId}')"]`);
+            if (navItem) {
+                navItem.classList.add('active');
+            }
 
             // Load appropriate content based on section
             if (sectionId === 'profile-section') {
                 loadMyBooks();
             } else if (sectionId === 'chat-section') {
                 loadChatRooms();
+            } else if (sectionId === 'discover-section') {
+                // Reset the book index and fetch books again
+                currentBookIndex = 0;
+                books = [];
+                fetchBooks().catch(error => {
+                    console.error('Error loading books:', error);
+                    const container = document.getElementById('book-list');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="error-message">
+                                <h2>Error Loading Books</h2>
+                                <p>${error.message}</p>
+                                <p>Please try refreshing the page.</p>
+                            </div>
+                        `;
+                    }
+                });
             }
         }
 
@@ -1055,15 +1171,37 @@
                         </div>
                         <div class="my-books-list">
                             ${myBooks.map(book => `
-                                <div class="book-card">
-                                    <h2 class="book-title">${book.title}</h2>
-                                    <p class="book-author">by ${book.author}</p>
-                                    <p class="book-description">${book.description}</p>
-                                    <div class="book-actions">
-                                        <button class="delete-book-button" onclick="deleteBook('${book._id}')">
-                                            <i class="fas fa-trash"></i>
-                                            Delete Book
-                                        </button>
+                                <div class="my-book-card">
+                                    <div class="my-book-image">
+                                        ${book.photoUrl ? 
+                                            `<img src="${book.photoUrl}" alt="${book.title}">` :
+                                            `<div class="placeholder">
+                                                <i class="fas fa-book"></i>
+                                            </div>`
+                                        }
+                                    </div>
+                                    <div class="my-book-content">
+                                        <h2 class="book-title">${book.title}</h2>
+                                        <p class="book-author">by ${book.author}</p>
+                                        <p class="book-description">${book.description}</p>
+                                        ${Object.entries(book.sharingOptions || {})
+                                            .filter(([_, value]) => value)
+                                            .map(([key]) => {
+                                                const labels = {
+                                                    forSale: '出售',
+                                                    forExchange: '漂出',
+                                                    forBorrow: '借出',
+                                                    forDiscussion: '同人傾下'
+                                                };
+                                                return `<span class="sharing-option">${labels[key]}</span>`;
+                                            })
+                                            .join('')}
+                                        <div class="book-actions">
+                                            <button class="delete-book-button" onclick="deleteBook('${book._id}')">
+                                                <i class="fas fa-trash"></i>
+                                                Delete Book
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             `).join('')}
@@ -1218,7 +1356,17 @@
             if (!token) {
                 window.location.href = 'login.html';
             } else {
-                fetchBooks();
+                // Check if there's a target section stored
+                const targetSection = localStorage.getItem('targetSection');
+                if (targetSection) {
+                    // Clear the stored section
+                    localStorage.removeItem('targetSection');
+                    // Show the target section
+                    showSection(targetSection);
+                } else {
+                    // Default to discover section
+                    showSection('discover-section');
+                }
             }
         };
     </script>

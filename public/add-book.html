@@ -30,30 +30,40 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
             margin-bottom: 2rem;
-            color: #2c3e50;
             position: relative;
         }
 
         .back-button {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #3498db;
-            cursor: pointer;
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-            padding: 0.5rem;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            cursor: pointer;
         }
 
         .back-button:hover {
-            color: #2980b9;
+            background-color: #f5f6fa;
+        }
+
+        .back-button i {
+            font-size: 1.1rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.8rem;
         }
 
         .form-container {
@@ -61,6 +71,70 @@
             border-radius: 20px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             padding: 2rem;
+        }
+
+        .photo-upload {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .photo-preview {
+            width: 200px;
+            height: 300px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background-color: #f8f9fa;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .photo-preview .placeholder {
+            color: #6c757d;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .photo-preview .placeholder i {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: #adb5bd;
+        }
+
+        .upload-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .upload-button:hover {
+            background: #2980b9;
+        }
+
+        .upload-button i {
+            font-size: 1.2rem;
+        }
+
+        #photoInput {
+            display: none;
         }
 
         .form-group {
@@ -157,14 +231,27 @@
 <body>
     <div class="container">
         <div class="header">
-            <button class="back-button" onclick="window.location.href='sharing.html'">
-                <i class="fas fa-arrow-left"></i>
-                Back
-            </button>
+            <a href="javascript:void(0)" class="back-button" onclick="navigateToProfileSection()">
+                <i class="fas fa-chevron-left"></i>
+            </a>
             <h1>Add New Book</h1>
         </div>
         <div class="form-container">
             <form id="addBookForm" onsubmit="handleSubmit(event)">
+                <div class="photo-upload">
+                    <div class="photo-preview" id="photoPreview">
+                        <div class="placeholder">
+                            <i class="fas fa-book"></i>
+                            <p>Add Book Cover</p>
+                        </div>
+                        <img id="previewImage" src="" alt="Book cover preview">
+                    </div>
+                    <label for="photoInput" class="upload-button">
+                        <i class="fas fa-upload"></i>
+                        Choose Photo
+                    </label>
+                    <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                </div>
                 <div class="form-group">
                     <label for="title">Book Title</label>
                     <input type="text" id="title" name="title" required>
@@ -206,7 +293,33 @@
         </div>
     </div>
 
+    <script src="cloud-storage.js"></script>
     <script>
+        let selectedFile = null;
+
+        function navigateToProfileSection() {
+            // Store the target section in localStorage
+            localStorage.setItem('targetSection', 'profile-section');
+            // Navigate to sharing page
+            window.location.href = 'sharing.html';
+        }
+
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('previewImage');
+                    const placeholder = document.querySelector('.placeholder');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
         async function handleSubmit(event) {
             event.preventDefault();
             
@@ -230,6 +343,27 @@
                     return;
                 }
 
+                // Upload photo if selected
+                let photoUrl = null;
+                if (selectedFile) {
+                    try {
+                        console.log('Starting photo upload process...');
+                        photoUrl = await uploadToCloud(selectedFile);
+                        console.log('Photo uploaded successfully:', photoUrl);
+                    } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        throw new Error(`Failed to upload photo: ${error.message}`);
+                    }
+                }
+
+                console.log('Creating book with data:', {
+                    title,
+                    author,
+                    description,
+                    sharingOptions,
+                    photoUrl
+                });
+
                 const response = await fetch('https://book-sharing-app.onrender.com/api/books', {
                     method: 'POST',
                     headers: {
@@ -240,11 +374,13 @@
                         title,
                         author,
                         description,
-                        sharingOptions
+                        sharingOptions,
+                        photoUrl
                     })
                 });
 
                 const data = await response.json();
+                console.log('Server response:', data);
 
                 if (!response.ok) {
                     throw new Error(data.message || data.error || 'Failed to add book');

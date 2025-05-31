@@ -47,6 +47,7 @@
             height: 2.5rem;
             border-radius: 50%;
             transition: background-color 0.2s;
+            cursor: pointer;
         }
 
         .back-button:hover {
@@ -94,20 +95,18 @@
             padding: 0.8rem 1rem;
             border-radius: 15px;
             position: relative;
-            clear: both;
+            word-wrap: break-word;
         }
 
         .message.sent {
-            float: right;
+            align-self: flex-end;
             background-color: #dcf8c6;
-            margin-left: auto;
             border-bottom-right-radius: 5px;
         }
 
         .message.received {
-            float: left;
+            align-self: flex-start;
             background-color: white;
-            margin-right: auto;
             border-bottom-left-radius: 5px;
         }
 
@@ -119,7 +118,6 @@
             font-size: 0.7rem;
             color: #999;
             margin-top: 0.3rem;
-            text-align: right;
         }
 
         .message.sent .message-time {
@@ -180,7 +178,7 @@
 </head>
 <body>
     <div class="chat-header">
-        <a href="sharing.html#chat" class="back-button">
+        <a href="javascript:void(0)" class="back-button" onclick="navigateToChatSection()">
             <i class="fas fa-chevron-left"></i>
         </a>
         <div class="chat-title-container">
@@ -201,5 +199,13 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        function navigateToChatSection() {
+            // Store the target section in localStorage
+            localStorage.setItem('targetSection', 'chat-section');
+            // Navigate to sharing page
+            window.location.href = 'sharing.html';
+        }
+    </script>
 </body>
 </html> 

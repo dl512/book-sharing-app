@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const path = require("path");
+const { Storage } = require("@google-cloud/storage");
 
 const app = express();
 app.use(cors());
@@ -12,6 +13,14 @@ app.use(express.json());
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, "public")));
+
+// Initialize Google Cloud Storage
+const storage = new Storage({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials: JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS),
+});
+
+const bucket = storage.bucket(process.env.GOOGLE_CLOUD_BUCKET_NAME);
 
 // MongoDB connection with retry logic
 const connectWithRetry = async () => {
@@ -910,6 +919,86 @@ app.post("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ error: "Error sending message: " + error.message });
+  }
+});
+
+// Generate signed URL for upload
+app.post("/api/upload/signed-url", authenticateToken, async (req, res) => {
+  try {
+    console.log("\n=== Generating Signed URL ===");
+    console.log("Request body:", req.body);
+
+    const { fileName, fileType } = req.body;
+
+    if (!fileName || !fileType) {
+      console.error("Missing fileName or fileType");
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "fileName and fileType are required",
+      });
+    }
+
+    // Generate a signed URL for upload
+    const [signedUrl] = await bucket.file(fileName).getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+      contentType: fileType,
+    });
+
+    // Generate the public URL
+    const publicUrl = `https://storage.googleapis.com/${process.env.GOOGLE_CLOUD_BUCKET_NAME}/${fileName}`;
+
+    console.log("Generated signed URL:", signedUrl);
+    console.log("Public URL:", publicUrl);
+    console.log("=== End Generating Signed URL ===\n");
+
+    res.json({ signedUrl, publicUrl });
+  } catch (error) {
+    console.error("\n=== Error Generating Signed URL ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("==============================\n");
+
+    res.status(500).json({
+      error: "Failed to generate signed URL",
+      message: error.message,
+    });
+  }
+});
+
+// Delete file from storage
+app.delete("/api/upload/:fileName", authenticateToken, async (req, res) => {
+  try {
+    console.log("\n=== Deleting File ===");
+    console.log("File name:", req.params.fileName);
+
+    const { fileName } = req.params;
+
+    if (!fileName) {
+      console.error("Missing fileName");
+      return res.status(400).json({
+        error: "Missing required field",
+        message: "fileName is required",
+      });
+    }
+
+    await bucket.file(fileName).delete();
+
+    console.log("File deleted successfully");
+    console.log("=== End Deleting File ===\n");
+
+    res.json({ message: "File deleted successfully" });
+  } catch (error) {
+    console.error("\n=== Error Deleting File ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("========================\n");
+
+    res.status(500).json({
+      error: "Failed to delete file",
+      message: error.message,
+    });
   }
 });
 
