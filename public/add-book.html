@@ -244,15 +244,37 @@
                     })
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    throw new Error('Failed to add book');
+                    throw new Error(data.message || data.error || 'Failed to add book');
                 }
 
-                // Redirect back to sharing page
+                // Success - redirect to sharing page
                 window.location.href = 'sharing.html';
             } catch (error) {
                 console.error('Error adding book:', error);
-                alert('Error adding book. Please try again.');
+                // Display error message
+                const form = document.getElementById('addBookForm');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'error-message';
+                errorMessage.style.display = 'block';
+                errorMessage.style.color = '#e74c3c';
+                errorMessage.style.marginBottom = '1rem';
+                errorMessage.style.padding = '0.5rem';
+                errorMessage.style.backgroundColor = '#fde8e8';
+                errorMessage.style.borderRadius = '4px';
+                errorMessage.style.border = '1px solid #fbd5d5';
+                errorMessage.textContent = error.message || 'Failed to add book. Please try again.';
+                
+                // Remove any existing error messages
+                const existingError = form.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // Insert at the beginning of the form
+                form.insertBefore(errorMessage, form.firstChild);
             }
         }
 

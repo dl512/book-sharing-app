@@ -295,27 +295,174 @@ app.get("/api/books/my-books", authenticateToken, async (req, res) => {
 // Share a book
 app.post("/api/books", authenticateToken, async (req, res) => {
   try {
-    const { title, author, description, sharingOptions } = req.body;
-    const userId = req.user.userId;
+    console.log("\n=== Add Book Request Start ===");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("User object:", JSON.stringify(req.user, null, 2));
 
-    const book = new Book({
+    const { title, author, description, sharingOptions } = req.body;
+
+    // Validate user object
+    if (!req.user || !req.user.id) {
+      console.error("Invalid user object:", req.user);
+      return res.status(401).json({
+        error: "Authentication error",
+        message: "Invalid user information",
+      });
+    }
+
+    const userId = req.user.id;
+
+    // Validate required fields
+    if (!title || !author || !description) {
+      console.log("Missing required fields:", { title, author, description });
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "Title, author, and description are required",
+      });
+    }
+
+    // Validate MongoDB connection
+    if (mongoose.connection.readyState !== 1) {
+      console.error(
+        "MongoDB not connected. Current state:",
+        mongoose.connection.readyState
+      );
+      return res.status(503).json({
+        error: "Database error",
+        message: "Database connection not ready",
+      });
+    }
+
+    // Create book object
+    const bookData = {
       title,
       author,
       description,
       userId,
-      sharingOptions: {
-        forSale: sharingOptions?.forSale || false,
-        forExchange: sharingOptions?.forExchange || false,
-        forBorrow: sharingOptions?.forBorrow || false,
-        forDiscussion: sharingOptions?.forDiscussion || false,
-      },
-    });
+      sharingOptions: sharingOptions
+        ? {
+            forSale: sharingOptions.forSale || false,
+            forExchange: sharingOptions.forExchange || false,
+            forBorrow: sharingOptions.forBorrow || false,
+            forDiscussion: sharingOptions.forDiscussion || false,
+          }
+        : {
+            forSale: false,
+            forExchange: false,
+            forBorrow: false,
+            forDiscussion: false,
+          },
+    };
+
+    console.log("Creating book with data:", JSON.stringify(bookData, null, 2));
+
+    const book = new Book(bookData);
+    console.log("Book object created:", book);
+
+    // Validate book object before saving
+    const validationError = book.validateSync();
+    if (validationError) {
+      console.error("Book validation error:", validationError);
+      return res.status(400).json({
+        error: "Validation error",
+        message: validationError.message,
+      });
+    }
 
     await book.save();
+    console.log("Book saved successfully with ID:", book._id);
+    console.log("=== Add Book Request Complete ===\n");
+
     res.status(201).json(book);
   } catch (error) {
-    console.error("Error creating book:", error);
-    res.status(500).json({ message: "Error creating book" });
+    console.error("\n=== Add Book Error ===");
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("=====================\n");
+
+    // Send appropriate error response based on error type
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        error: "Validation error",
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "Error creating book",
+      message: error.message || "An unexpected error occurred",
+    });
+  }
+});
+
+// Delete a book
+app.delete("/api/books/:id", authenticateToken, async (req, res) => {
+  try {
+    console.log("\n=== Delete Book Request Start ===");
+    console.log("Book ID:", req.params.id);
+    console.log("User ID:", req.user.id);
+
+    const bookId = req.params.id;
+    const userId = req.user.id;
+
+    // Validate MongoDB connection
+    if (mongoose.connection.readyState !== 1) {
+      console.error(
+        "MongoDB not connected. Current state:",
+        mongoose.connection.readyState
+      );
+      return res.status(503).json({
+        error: "Database error",
+        message: "Database connection not ready",
+      });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      console.log("Invalid book ID format:", bookId);
+      return res.status(400).json({
+        error: "Invalid book ID",
+        message: "The provided book ID is not valid",
+      });
+    }
+
+    // Find the book and verify ownership
+    const book = await Book.findById(bookId);
+    if (!book) {
+      console.log("Book not found with ID:", bookId);
+      return res.status(404).json({
+        error: "Book not found",
+        message: "The requested book could not be found",
+      });
+    }
+
+    // Check if the user owns the book
+    if (book.userId.toString() !== userId) {
+      console.log("User not authorized to delete book");
+      return res.status(403).json({
+        error: "Not authorized",
+        message: "You are not authorized to delete this book",
+      });
+    }
+
+    // Delete the book
+    await Book.findByIdAndDelete(bookId);
+    console.log("Book deleted successfully");
+    console.log("=== Delete Book Request Complete ===\n");
+
+    res.json({ message: "Book deleted successfully" });
+  } catch (error) {
+    console.error("\n=== Delete Book Error ===");
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("=====================\n");
+
+    res.status(500).json({
+      error: "Error deleting book",
+      message: error.message || "An unexpected error occurred",
+    });
   }
 });
 
@@ -400,13 +547,16 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
           message: "Could not find the existing chat room",
         });
       }
+      // Add notification message to existing chat room
+      chatRoom.messages.push(notificationMessage);
+      await chatRoom.save();
     } else {
       console.log("Creating new chat relationship");
-      // Create new chat room
+      // Create new chat room with the notification message
       chatRoom = new ChatRoom({
         bookId: book._id,
         participants: [req.user.id, book.userId._id],
-        messages: [notificationMessage],
+        messages: [notificationMessage], // Only add the message once here
       });
       await chatRoom.save();
 
@@ -423,10 +573,6 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
       });
       await bookOwner.save();
     }
-
-    // Add notification message to chat room
-    chatRoom.messages.push(notificationMessage);
-    await chatRoom.save();
 
     // Fetch the final state of the chat room
     const finalChatRoom = await ChatRoom.findById(chatRoom._id)
@@ -455,9 +601,11 @@ app.post("/api/books/:id/like", authenticateToken, async (req, res) => {
       userId: book.userId.userId,
       chatRoomId: finalChatRoom._id.toString(),
       messages: finalChatRoom.messages.map((msg) => ({
-        text: msg.message,
-        senderId: msg.senderId.userId,
-        timestamp: msg.createdAt,
+        text: msg.message || "",
+        senderId: msg.senderId ? msg.senderId.userId : "Unknown",
+        timestamp: msg.createdAt
+          ? msg.createdAt.toISOString()
+          : new Date().toISOString(),
       })),
     };
 
@@ -504,68 +652,48 @@ app.get("/api/chatrooms/user", authenticateToken, async (req, res) => {
       .populate("participants", "userId")
       .populate("bookId", "title")
       .populate({
-        path: "messages",
-        populate: {
-          path: "senderId",
-          select: "userId",
-        },
+        path: "messages.senderId",
+        select: "userId",
       });
 
     console.log("Found chat rooms:", chatRooms.length);
 
-    const formattedChatRooms = chatRooms.map((room) => ({
-      id: room._id,
-      bookTitle: room.bookId ? room.bookId.title : "Unknown Book",
-      participants: room.participants.map((p) => ({
-        id: p._id,
-        userId: p.userId,
-      })),
-      messages: room.messages.map((m) => ({
-        text: m.message,
-        sender: m.senderId.userId,
-        timestamp: m.createdAt,
-      })),
-    }));
+    const formattedChatRooms = chatRooms.map((room) => {
+      // Format messages to ensure all fields are present
+      const formattedMessages = room.messages.map((msg) => {
+        const formattedMsg = {
+          text: msg.message || "",
+          senderId: msg.senderId ? msg.senderId.userId : "Unknown",
+          timestamp: msg.createdAt
+            ? msg.createdAt.toISOString()
+            : new Date().toISOString(),
+        };
+        console.log("Formatted message:", formattedMsg);
+        return formattedMsg;
+      });
 
-    console.log("Formatted chat rooms:", formattedChatRooms);
+      const formattedRoom = {
+        id: room._id,
+        bookTitle: room.bookId ? room.bookId.title : "Unknown Book",
+        participants: room.participants.map((p) => ({
+          id: p._id,
+          userId: p.userId,
+        })),
+        messages: formattedMessages,
+      };
+
+      console.log("Formatted room:", formattedRoom);
+      return formattedRoom;
+    });
+
     console.log("=== End Fetching User's Chat Rooms ===");
-
     res.json(formattedChatRooms);
   } catch (error) {
     console.error("Error fetching user's chat rooms:", error);
-    res
-      .status(500)
-      .json({ error: "Error fetching chat rooms: " + error.message });
-  }
-});
-
-// Get chat room messages
-app.get("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
-  const chatRoomId = req.params.id;
-
-  try {
-    const chatRoom = await ChatRoom.findById(chatRoomId).populate({
-      path: "messages.senderId",
-      select: "userId",
+    res.status(500).json({
+      error: "Error fetching chat rooms",
+      message: error.message,
     });
-
-    if (!chatRoom) {
-      return res.status(404).json({ error: "Chat room not found" });
-    }
-
-    // Format messages to include all necessary fields
-    const formattedMessages = chatRoom.messages.map((msg) => ({
-      text: msg.message,
-      senderId: msg.senderId,
-      timestamp: msg.createdAt,
-    }));
-
-    res.json(formattedMessages);
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    res
-      .status(500)
-      .json({ error: "Error fetching messages: " + error.message });
   }
 });
 
@@ -574,7 +702,8 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
   const chatRoomId = req.params.id;
 
   try {
-    console.log("Attempting to fetch chat room with ID:", chatRoomId);
+    console.log("\n=== Fetching Chat Room Details ===");
+    console.log("Chat Room ID:", chatRoomId);
 
     // Validate MongoDB connection
     if (mongoose.connection.readyState !== 1) {
@@ -605,7 +734,12 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
         select: "userId",
       });
 
-    console.log("Found chat room:", chatRoom ? "Yes" : "No");
+    console.log("\nRaw chat room data from DB:", {
+      id: chatRoom?._id,
+      messageCount: chatRoom?.messages?.length,
+      firstMessage: chatRoom?.messages?.[0],
+      lastMessage: chatRoom?.messages?.[chatRoom?.messages?.length - 1],
+    });
 
     if (!chatRoom) {
       console.log("Chat room not found with ID:", chatRoomId);
@@ -627,7 +761,26 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
     // Get the book title
     const bookTitle = chatRoom.bookId ? chatRoom.bookId.title : "Unknown Book";
 
-    // Format the response
+    // Format the response with proper message formatting
+    const formattedMessages = chatRoom.messages.map((msg, index) => {
+      console.log(`\nProcessing message ${index}:`, {
+        rawMessage: msg.message,
+        rawSenderId: msg.senderId,
+        rawTimestamp: msg.createdAt,
+      });
+
+      const formattedMsg = {
+        text: msg.message || "",
+        senderId: msg.senderId ? msg.senderId.userId : "Unknown",
+        timestamp: msg.createdAt
+          ? msg.createdAt.toISOString()
+          : new Date().toISOString(),
+      };
+
+      console.log(`Formatted message ${index}:`, formattedMsg);
+      return formattedMsg;
+    });
+
     const response = {
       _id: chatRoom._id,
       bookTitle: bookTitle,
@@ -635,21 +788,91 @@ app.get("/api/chatrooms/:id", authenticateToken, async (req, res) => {
         _id: p._id,
         userId: p.userId,
       })),
-      messages: chatRoom.messages.map((msg) => ({
-        text: msg.message,
-        senderId: msg.senderId,
-        timestamp: msg.createdAt,
-      })),
+      messages: formattedMessages,
     };
 
-    console.log("Sending chat room response:", response);
+    console.log("\nFinal response:", {
+      id: response._id,
+      messageCount: response.messages.length,
+      firstMessage: response.messages[0],
+      lastMessage: response.messages[response.messages.length - 1],
+    });
+
+    console.log("=== End Fetching Chat Room Details ===\n");
     return res.json(response);
   } catch (error) {
-    console.error("Error fetching chat room:", error);
+    console.error("\n=== Error Fetching Chat Room ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("==============================\n");
     return res.status(500).json({
       error: "Error fetching chat room",
       message: error.message,
     });
+  }
+});
+
+// Get chat room messages
+app.get("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
+  const chatRoomId = req.params.id;
+
+  try {
+    console.log("\n=== Fetching Chat Room Messages ===");
+    console.log("Chat Room ID:", chatRoomId);
+
+    const chatRoom = await ChatRoom.findById(chatRoomId).populate({
+      path: "messages.senderId",
+      select: "userId",
+    });
+
+    console.log("\nRaw chat room data from DB:", {
+      id: chatRoom?._id,
+      messageCount: chatRoom?.messages?.length,
+      firstMessage: chatRoom?.messages?.[0],
+      lastMessage: chatRoom?.messages?.[chatRoom?.messages?.length - 1],
+    });
+
+    if (!chatRoom) {
+      console.log("Chat room not found with ID:", chatRoomId);
+      return res.status(404).json({ error: "Chat room not found" });
+    }
+
+    // Format messages to include all necessary fields with proper fallbacks
+    const formattedMessages = chatRoom.messages.map((msg, index) => {
+      console.log(`\nProcessing message ${index}:`, {
+        rawMessage: msg.message,
+        rawSenderId: msg.senderId,
+        rawTimestamp: msg.createdAt,
+      });
+
+      const formattedMsg = {
+        text: msg.message || "",
+        senderId: msg.senderId ? msg.senderId.userId : "Unknown",
+        timestamp: msg.createdAt
+          ? msg.createdAt.toISOString()
+          : new Date().toISOString(),
+      };
+
+      console.log(`Formatted message ${index}:`, formattedMsg);
+      return formattedMsg;
+    });
+
+    console.log("\nFinal response:", {
+      messageCount: formattedMessages.length,
+      firstMessage: formattedMessages[0],
+      lastMessage: formattedMessages[formattedMessages.length - 1],
+    });
+
+    console.log("=== End Fetching Chat Room Messages ===\n");
+    res.json(formattedMessages);
+  } catch (error) {
+    console.error("\n=== Error Fetching Messages ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("=============================\n");
+    res
+      .status(500)
+      .json({ error: "Error fetching messages: " + error.message });
   }
 });
 

@@ -391,16 +391,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUserId = JSON.parse(atob(token.split(".")[1])).id;
 
     const messageElement = document.createElement("div");
-    const isCurrentUser = message.senderId._id === currentUserId;
+    const isCurrentUser = message.senderId === currentUserId;
     messageElement.className = `message ${isCurrentUser ? "sent" : "received"}`;
 
-    const time = new Date(message.createdAt).toLocaleTimeString([], {
+    const time = new Date(message.timestamp).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
 
     messageElement.innerHTML = `
-        <div class="message-content">${message.message}</div>
+        <div class="message-content">${message.text}</div>
         <div class="message-time">${time}</div>
     `;
 
