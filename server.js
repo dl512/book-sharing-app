@@ -22,6 +22,18 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GOOGLE_CLOUD_BUCKET_NAME);
 
+// Configure CORS for the bucket
+async function configureCORS() {
+  try {
+    await bucket.setCorsConfiguration(require("./cors.json"));
+    console.log("CORS configuration updated successfully");
+  } catch (error) {
+    console.error("Error setting CORS configuration:", error);
+  }
+}
+
+configureCORS();
+
 // MongoDB connection with retry logic
 const connectWithRetry = async () => {
   try {
@@ -923,47 +935,40 @@ app.post("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
 });
 
 // Generate signed URL for upload
-app.post("/api/upload/signed-url", authenticateToken, async (req, res) => {
+app.post("/api/upload/signed-url", async (req, res) => {
+  console.log("=== Signed URL Request ===");
+  console.log("Request body:", req.body);
+
+  const { fileName, fileType } = req.body;
+  if (!fileName || !fileType) {
+    console.log("Missing fileName or fileType");
+    return res
+      .status(400)
+      .json({ error: "fileName and fileType are required" });
+  }
+
   try {
-    console.log("\n=== Generating Signed URL ===");
-    console.log("Request body:", req.body);
-
-    const { fileName, fileType } = req.body;
-
-    if (!fileName || !fileType) {
-      console.error("Missing fileName or fileType");
-      return res.status(400).json({
-        error: "Missing required fields",
-        message: "fileName and fileType are required",
-      });
-    }
-
-    // Generate a signed URL for upload
-    const [signedUrl] = await bucket.file(fileName).getSignedUrl({
+    const options = {
       version: "v4",
       action: "write",
       expires: Date.now() + 15 * 60 * 1000, // 15 minutes
       contentType: fileType,
-    });
+      cors: [
+        {
+          origin: ["*"],
+          method: ["GET", "HEAD", "PUT", "POST", "DELETE"],
+          responseHeader: ["Content-Type", "Access-Control-Allow-Origin"],
+          maxAgeSeconds: 3600,
+        },
+      ],
+    };
 
-    // Generate the public URL
-    const publicUrl = `https://storage.googleapis.com/${process.env.GOOGLE_CLOUD_BUCKET_NAME}/${fileName}`;
-
-    console.log("Generated signed URL:", signedUrl);
-    console.log("Public URL:", publicUrl);
-    console.log("=== End Generating Signed URL ===\n");
-
-    res.json({ signedUrl, publicUrl });
+    const [url] = await bucket.file(fileName).getSignedUrl(options);
+    console.log("Generated signed URL:", url);
+    res.json({ url });
   } catch (error) {
-    console.error("\n=== Error Generating Signed URL ===");
-    console.error("Error details:", error);
-    console.error("Stack trace:", error.stack);
-    console.error("==============================\n");
-
-    res.status(500).json({
-      error: "Failed to generate signed URL",
-      message: error.message,
-    });
+    console.error("Error generating signed URL:", error);
+    res.status(500).json({ error: "Error generating signed URL" });
   }
 });
 
