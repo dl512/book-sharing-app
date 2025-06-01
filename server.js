@@ -973,7 +973,9 @@ app.post("/api/upload/signed-url", async (req, res) => {
 
     const [signedUrl] = await bucket.file(fileName).getSignedUrl(options);
     // Generate a public URL that doesn't expire using storage.cloud.google.com
-    const publicUrl = `https://storage.cloud.google.com/${process.env.GOOGLE_CLOUD_BUCKET_NAME}/${fileName}`;
+    // Encode the file name only once for the public URL
+    const encodedFileName = encodeURIComponent(fileName);
+    const publicUrl = `https://storage.cloud.google.com/${process.env.GOOGLE_CLOUD_BUCKET_NAME}/${encodedFileName}`;
 
     console.log("Generated signed URL:", signedUrl);
     console.log("Public URL:", publicUrl);

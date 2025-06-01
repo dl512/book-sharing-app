@@ -72,7 +72,8 @@ async function uploadToCloud(file) {
 
     // Generate a safe file name with timestamp and encoded name
     const timestamp = Date.now();
-    const safeFileName = `${timestamp}-${encodeURIComponent(file.name)}`;
+    // Don't encode the file name here since it will be encoded by the server
+    const safeFileName = `${timestamp}-${file.name}`;
     console.log("Generated safe file name:", safeFileName);
 
     // Get a signed URL for upload
