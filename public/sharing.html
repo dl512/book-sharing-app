@@ -758,6 +758,36 @@
             font-size: 0.9rem;
             font-weight: 500;
         }
+
+        .book-card {
+            position: relative;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .book-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .book-photo-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -915,10 +945,8 @@
                 <div class="book-card" id="current-card">
                     <div class="book-image">
                         ${book.photoUrl ? 
-                            `<img src="${book.photoUrl}" alt="${book.title}">` :
-                            `<div class="placeholder">
-                                <i class="fas fa-book"></i>
-                            </div>`
+                            `<img src="${book.photoUrl}" alt="${book.title}" class="book-photo">` :
+                            `<div class="book-photo-placeholder">No Photo</div>`
                         }
                     </div>
                     <div class="book-info">

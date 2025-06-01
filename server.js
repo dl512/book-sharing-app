@@ -81,6 +81,7 @@ const bookSchema = new mongoose.Schema(
     title: { type: String, required: true },
     author: { type: String, required: true },
     description: { type: String, required: true },
+    photoUrl: { type: String },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -260,6 +261,7 @@ app.get("/api/books", authenticateToken, async (req, res) => {
       title: book.title,
       author: book.author,
       description: book.description,
+      photoUrl: book.photoUrl,
       userId: {
         _id: book.userId._id,
         userId: book.userId.userId,
@@ -320,7 +322,7 @@ app.post("/api/books", authenticateToken, async (req, res) => {
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     console.log("User object:", JSON.stringify(req.user, null, 2));
 
-    const { title, author, description, sharingOptions } = req.body;
+    const { title, author, description, sharingOptions, photoUrl } = req.body;
 
     // Validate user object
     if (!req.user || !req.user.id) {
@@ -359,6 +361,7 @@ app.post("/api/books", authenticateToken, async (req, res) => {
       title,
       author,
       description,
+      photoUrl,
       userId,
       sharingOptions: sharingOptions
         ? {
@@ -936,7 +939,8 @@ app.post("/api/chatrooms/:id/messages", authenticateToken, async (req, res) => {
 
 // Generate signed URL for upload
 app.post("/api/upload/signed-url", async (req, res) => {
-  console.log("=== Signed URL Request ===");
+  console.log("\n=== Signed URL Request Start ===");
+  console.log("Request headers:", req.headers);
   console.log("Request body:", req.body);
 
   const { fileName, fileType } = req.body;
@@ -948,6 +952,8 @@ app.post("/api/upload/signed-url", async (req, res) => {
   }
 
   try {
+    console.log("Generating signed URL for:", { fileName, fileType });
+
     const options = {
       version: "v4",
       action: "write",
@@ -963,11 +969,24 @@ app.post("/api/upload/signed-url", async (req, res) => {
       ],
     };
 
-    const [url] = await bucket.file(fileName).getSignedUrl(options);
-    console.log("Generated signed URL:", url);
-    res.json({ url });
+    console.log("Signed URL options:", options);
+
+    const [signedUrl] = await bucket.file(fileName).getSignedUrl(options);
+    const publicUrl = `https://storage.googleapis.com/${process.env.GOOGLE_CLOUD_BUCKET_NAME}/${fileName}`;
+
+    console.log("Generated signed URL:", signedUrl);
+    console.log("Public URL:", publicUrl);
+
+    const response = { signedUrl, publicUrl };
+    console.log("Sending response:", response);
+    console.log("=== Signed URL Request Complete ===\n");
+
+    res.json(response);
   } catch (error) {
-    console.error("Error generating signed URL:", error);
+    console.error("\n=== Error Generating Signed URL ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("================================\n");
     res.status(500).json({ error: "Error generating signed URL" });
   }
 });

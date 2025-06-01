@@ -12,6 +12,7 @@ async function getSignedUrl(fileName, fileType) {
       throw new Error("No authentication token found");
     }
 
+    console.log("Making request to server for signed URL...");
     const response = await fetch(
       "https://book-sharing-app.onrender.com/api/upload/signed-url",
       {
@@ -28,6 +29,10 @@ async function getSignedUrl(fileName, fileType) {
     );
 
     console.log("Signed URL response status:", response.status);
+    console.log(
+      "Response headers:",
+      Object.fromEntries(response.headers.entries())
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -37,7 +42,18 @@ async function getSignedUrl(fileName, fileType) {
 
     const data = await response.json();
     console.log("Received signed URL data:", data);
-    return data;
+
+    // Handle both response formats (url or signedUrl)
+    const signedUrl = data.signedUrl || data.url;
+    if (!signedUrl) {
+      console.error("No signed URL in response:", data);
+      throw new Error("Server did not return a signed URL");
+    }
+
+    // If we got a url instead of signedUrl, construct the publicUrl
+    const publicUrl = data.publicUrl || signedUrl;
+
+    return { signedUrl, publicUrl };
   } catch (error) {
     console.error("Error getting signed URL:", error);
     throw error;
@@ -47,11 +63,16 @@ async function getSignedUrl(fileName, fileType) {
 // Function to upload file to Google Cloud Storage
 async function uploadToCloud(file) {
   try {
-    console.log("Starting file upload:", {
+    console.log("\n=== Starting File Upload ===");
+    console.log("File details:", {
       name: file.name,
       type: file.type,
       size: file.size,
     });
+
+    // Check authentication
+    const token = localStorage.getItem("token");
+    console.log("Auth token present:", !!token);
 
     // Generate a unique file name
     const fileName = `${Date.now()}-${file.name.replace(
@@ -61,8 +82,14 @@ async function uploadToCloud(file) {
     console.log("Generated file name:", fileName);
 
     // Get signed URL
+    console.log("Requesting signed URL...");
     const { signedUrl, publicUrl } = await getSignedUrl(fileName, file.type);
     console.log("Got signed URL:", signedUrl);
+    console.log("Got public URL:", publicUrl);
+
+    if (!signedUrl) {
+      throw new Error("No signed URL received from server");
+    }
 
     // Upload file using signed URL
     console.log("Uploading file to signed URL...");
@@ -75,6 +102,10 @@ async function uploadToCloud(file) {
     });
 
     console.log("Upload response status:", uploadResponse.status);
+    console.log(
+      "Upload response headers:",
+      Object.fromEntries(uploadResponse.headers.entries())
+    );
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
@@ -83,9 +114,13 @@ async function uploadToCloud(file) {
     }
 
     console.log("File uploaded successfully. Public URL:", publicUrl);
+    console.log("=== File Upload Complete ===\n");
     return publicUrl;
   } catch (error) {
-    console.error("Error uploading to cloud:", error);
+    console.error("\n=== Error Uploading to Cloud ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("=============================\n");
     throw error;
   }
 }
