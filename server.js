@@ -169,7 +169,7 @@ function authenticateToken(req, res, next) {
 app.post("/api/auth/register", async (req, res) => {
   console.log("\n=== Registration Request Start ===");
   console.log("Full request body:", JSON.stringify(req.body, null, 2));
-  const { userId, password, books, photoUrl } = req.body;
+  const { userId, password, books } = req.body;
 
   try {
     // Create user
@@ -178,7 +178,6 @@ app.post("/api/auth/register", async (req, res) => {
     const newUser = new User({
       userId,
       password: hashedPassword,
-      photoUrl,
     });
     const savedUser = await newUser.save();
     console.log("User created with ID:", savedUser._id);
@@ -193,11 +192,13 @@ app.post("/api/auth/register", async (req, res) => {
       for (let i = 0; i < books.length; i++) {
         const book = books[i];
         console.log(`\nCreating book ${i + 1}:`, book.title);
+        console.log("Book photo URL:", book.photoUrl);
 
         const newBook = new Book({
           title: book.title,
           author: book.author,
           description: book.description,
+          photoUrl: book.photoUrl,
           userId: savedUser._id,
           likes: [],
           sharingOptions: {
@@ -211,6 +212,7 @@ app.post("/api/auth/register", async (req, res) => {
         console.log("Book object created:", newBook);
         const savedBook = await newBook.save();
         console.log("Book saved with ID:", savedBook._id);
+        console.log("Saved book photo URL:", savedBook.photoUrl);
       }
     } else {
       console.log("\nNo books provided in registration");
