@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Sharing App - Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s ease;
+        }
+
+        .book-counter {
+            color: #7f8c8d;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-section h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        input, textarea {
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        button {
+            padding: 1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            margin-top: 1rem;
+            color: #7f8c8d;
+            text-decoration: none;
+            display: inline-block;
+            padding: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: #34495e;
+        }
+
+        .book-preview {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .book-preview h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .book-preview p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 1.5rem;
+            }
+
+            input, textarea, button {
+                padding: 0.8rem;
+            }
+        }
+
+        .sharing-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option label {
+            cursor: pointer;
+            font-size: 1rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Register</h1>
+        <div class="progress-bar" style="display: none;">
+            <div class="progress" id="progress-bar"></div>
+        </div>
+        <div class="book-counter" id="book-counter" style="display: none;">Book 1 of 3</div>
+        
+        <!-- User Registration Section -->
+        <div class="form-section active" id="user-section">
+            <h2>Create Your Account</h2>
+            <form id="register-form">
+                <input type="text" id="register-userid" placeholder="User ID" required>
+                <input type="password" id="register-password" placeholder="Password" required>
+                <button type="button" id="next-to-books">Next</button>
+            </form>
+        </div>
+
+        <!-- Book Input Section -->
+        <div class="form-section" id="book-section">
+            <h2>Add Your Books</h2>
+            <form id="book-form" onsubmit="return false;">
+                <input type="text" id="book-title" placeholder="Book Title" required>
+                <input type="text" id="book-author" placeholder="Author" required>
+                <textarea id="book-description" placeholder="Book Description" required></textarea>
+                <div class="form-group">
+                    <label>Sharing Options</label>
+                    <div class="sharing-options">
+                        <div class="option">
+                            <input type="checkbox" id="forSale" name="forSale">
+                            <label for="forSale">出售 (For Sale)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forExchange" name="forExchange">
+                            <label for="forExchange">漂出 (For Exchange)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forBorrow" name="forBorrow">
+                            <label for="forBorrow">借出 (For Borrow)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forDiscussion" name="forDiscussion">
+                            <label for="forDiscussion">同人傾下 (For Discussion)</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="add-book">Add Book</button>
+            </form>
+            <div id="books-preview"></div>
+        </div>
+
+        <a href="index.html" class="back-link">Back to Home</a>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        let currentBook = 1;
+        const totalBooks = 3;
+        const books = [];
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = (currentBook / totalBooks) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('book-counter').textContent = `Book ${currentBook} of ${totalBooks}`;
+        }
+
+        // Show book preview
+        function addBookPreview(book) {
+            const preview = document.createElement('div');
+            preview.className = 'book-preview';
+            preview.innerHTML = `
+                <h3>${book.title}</h3>
+                <p>by ${book.author}</p>
+                <p>${book.description}</p>
+            `;
+            document.getElementById('books-preview').appendChild(preview);
+        }
+
+        // Handle next button click
+        document.getElementById('next-to-books').addEventListener('click', () => {
+            const userId = document.getElementById('register-userid').value;
+            const password = document.getElementById('register-password').value;
+
+            if (!userId || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            // Show progress bar and book counter
+            document.querySelector('.progress-bar').style.display = 'block';
+            document.getElementById('book-counter').style.display = 'block';
+            
+            document.getElementById('user-section').classList.remove('active');
+            document.getElementById('book-section').classList.add('active');
+            
+            // Initialize progress
+            updateProgress();
+        });
+
+        // Handle add book button click
+        document.getElementById('add-book').addEventListener('click', async () => {
+            const title = document.getElementById('book-title').value;
+            const author = document.getElementById('book-author').value;
+            const description = document.getElementById('book-description').value;
+            const sharingOptions = {
+                forSale: document.getElementById('forSale').checked,
+                forExchange: document.getElementById('forExchange').checked,
+                forBorrow: document.getElementById('forBorrow').checked,
+                forDiscussion: document.getElementById('forDiscussion').checked
+            };
+
+            if (!title || !author || !description) {
+                alert('Please fill in all book details');
+                return;
+            }
+
+            console.log('\nAdding book:', { title, author, description, sharingOptions });
+            const book = { title, author, description, sharingOptions };
+            books.push(book);
+            addBookPreview(book);
+
+            // Clear form
+            document.getElementById('book-title').value = '';
+            document.getElementById('book-author').value = '';
+            document.getElementById('book-description').value = '';
+            document.getElementById('forSale').checked = false;
+            document.getElementById('forExchange').checked = false;
+            document.getElementById('forBorrow').checked = false;
+            document.getElementById('forDiscussion').checked = false;
+
+            // Update progress
+            currentBook++;
+            updateProgress();
+
+            // If all books are added, proceed with registration
+            if (currentBook > totalBooks) {
+                // Store user data and books
+                const userData = {
+                    userId: document.getElementById('register-userid').value,
+                    password: document.getElementById('register-password').value,
+                    books: books
+                };
+
+                console.log('\nSending registration data:', JSON.stringify(userData, null, 2));
+
+                try {
+                    // Send registration request
+                    const response = await fetch('https://book-sharing-app.onrender.com/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(userData)
+                    });
+
+                    const result = await response.text();
+                    console.log('\nRegistration response:', result);
+
+                    if (!response.ok) {
+                        throw new Error(result || 'Registration failed');
+                    }
+
+                    alert(result);
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('\nRegistration error:', error);
+                    alert('Registration failed: ' + error.message);
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

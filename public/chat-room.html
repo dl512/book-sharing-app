@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room - Book Sharing App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            height: 4rem;
+        }
+
+        .back-button {
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #f5f6fa;
+        }
+
+        .back-button i {
+            font-size: 1.1rem;
+        }
+
+        .chat-title-container {
+            flex: 1;
+            margin-left: 0.5rem;
+            overflow: hidden;
+        }
+
+        .chat-header h1 {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1rem;
+            margin-top: 4rem;
+            margin-bottom: 4rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 0.8rem 1rem;
+            border-radius: 15px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background-color: white;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-content {
+            word-break: break-word;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 0.3rem;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        .message.received .message-time {
+            text-align: left;
+        }
+
+        .message-input-container {
+            background-color: #fff;
+            padding: 1rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 2rem;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .message-input:focus {
+            border-color: #3498db;
+        }
+
+        .send-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .send-button:hover {
+            background-color: #2980b9;
+        }
+
+        .send-button i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <a href="javascript:void(0)" class="back-button" onclick="navigateToChatSection()">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <div class="chat-title-container">
+            <h1 id="chat-title">Loading...</h1>
+            <p id="chat-subtitle">Connecting...</p>
+        </div>
+    </div>
+
+    <div id="messages-container" class="messages-container">
+        <!-- Messages will be loaded here -->
+    </div>
+
+    <div class="message-input-container">
+        <input type="text" id="message-input" class="message-input" placeholder="Type a message...">
+        <button class="send-button" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function navigateToChatSection() {
+            // Store the target section in localStorage
+            localStorage.setItem('targetSection', 'chat-section');
+            // Navigate to sharing page
+            window.location.href = 'sharing.html';
+        }
+    </script>
+</body>
+</html> 

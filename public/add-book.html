@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Book</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .back-button {
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #f5f6fa;
+        }
+
+        .back-button i {
+            font-size: 1.1rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .photo-upload {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .photo-preview {
+            width: 200px;
+            height: 300px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background-color: #f8f9fa;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .photo-preview .placeholder {
+            color: #6c757d;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .photo-preview .placeholder i {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: #adb5bd;
+        }
+
+        .upload-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .upload-button:hover {
+            background: #2980b9;
+        }
+
+        .upload-button i {
+            font-size: 1.2rem;
+        }
+
+        #photoInput {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .submit-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        .submit-button:hover {
+            background: #2980b9;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+            }
+        }
+
+        .sharing-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option label {
+            cursor: pointer;
+            font-size: 1rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="javascript:void(0)" class="back-button" onclick="navigateToProfileSection()">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1>Add New Book</h1>
+        </div>
+        <div class="form-container">
+            <form id="addBookForm" onsubmit="handleSubmit(event)">
+                <div class="photo-upload">
+                    <div class="photo-preview" id="photoPreview">
+                        <div class="placeholder">
+                            <i class="fas fa-book"></i>
+                            <p>Add Book Cover</p>
+                        </div>
+                        <img id="previewImage" src="" alt="Book cover preview">
+                    </div>
+                    <label for="photoInput" class="upload-button">
+                        <i class="fas fa-upload"></i>
+                        Choose Photo
+                    </label>
+                    <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                </div>
+                <div class="form-group">
+                    <label for="title">Book Title</label>
+                    <input type="text" id="title" name="title" required>
+                    <div class="error-message" id="titleError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" name="author" required>
+                    <div class="error-message" id="authorError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" required></textarea>
+                    <div class="error-message" id="descriptionError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Sharing Options</label>
+                    <div class="sharing-options">
+                        <div class="option">
+                            <input type="checkbox" id="forSale" name="forSale">
+                            <label for="forSale">出售 (For Sale)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forExchange" name="forExchange">
+                            <label for="forExchange">漂出 (For Exchange)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forBorrow" name="forBorrow">
+                            <label for="forBorrow">借出 (For Borrow)</label>
+                        </div>
+                        <div class="option">
+                            <input type="checkbox" id="forDiscussion" name="forDiscussion">
+                            <label for="forDiscussion">同人傾下 (For Discussion)</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="submit-button">Add Book</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="cloud-storage.js"></script>
+    <script>
+        let selectedFile = null;
+
+        function navigateToProfileSection() {
+            // Store the target section in localStorage
+            localStorage.setItem('targetSection', 'profile-section');
+            // Navigate to sharing page
+            window.location.href = 'sharing.html';
+        }
+
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('previewImage');
+                    const placeholder = document.querySelector('.placeholder');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            // Clear previous error messages
+            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+            
+            const title = document.getElementById('title').value.trim();
+            const author = document.getElementById('author').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const sharingOptions = {
+                forSale: document.getElementById('forSale').checked,
+                forExchange: document.getElementById('forExchange').checked,
+                forBorrow: document.getElementById('forBorrow').checked,
+                forDiscussion: document.getElementById('forDiscussion').checked
+            };
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Upload photo if selected
+                let photoUrl = null;
+                if (selectedFile) {
+                    try {
+                        console.log('Starting photo upload process...');
+                        photoUrl = await uploadToCloud(selectedFile);
+                        console.log('Photo uploaded successfully:', photoUrl);
+                    } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        throw new Error(`Failed to upload photo: ${error.message}`);
+                    }
+                }
+
+                console.log('Creating book with data:', {
+                    title,
+                    author,
+                    description,
+                    sharingOptions,
+                    photoUrl
+                });
+
+                const response = await fetch('https://book-sharing-app.onrender.com/api/books', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title,
+                        author,
+                        description,
+                        sharingOptions,
+                        photoUrl
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Server response:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || 'Failed to add book');
+                }
+
+                // Success - redirect to sharing page
+                window.location.href = 'sharing.html';
+            } catch (error) {
+                console.error('Error adding book:', error);
+                // Display error message
+                const form = document.getElementById('addBookForm');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'error-message';
+                errorMessage.style.display = 'block';
+                errorMessage.style.color = '#e74c3c';
+                errorMessage.style.marginBottom = '1rem';
+                errorMessage.style.padding = '0.5rem';
+                errorMessage.style.backgroundColor = '#fde8e8';
+                errorMessage.style.borderRadius = '4px';
+                errorMessage.style.border = '1px solid #fbd5d5';
+                errorMessage.textContent = error.message || 'Failed to add book. Please try again.';
+                
+                // Remove any existing error messages
+                const existingError = form.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // Insert at the beginning of the form
+                form.insertBefore(errorMessage, form.firstChild);
+            }
+        }
+
+        // Check authentication when page loads
+        window.onload = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+        };
+    </script>
+</body>
+</html> 
