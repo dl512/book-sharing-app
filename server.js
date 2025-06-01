@@ -65,6 +65,7 @@ app.use((req, res, next) => {
 const userSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true, minlength: 3 },
   password: { type: String, required: true, minlength: 6 },
+  photoUrl: { type: String },
   chatPartners: [
     {
       partnerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -168,13 +169,17 @@ function authenticateToken(req, res, next) {
 app.post("/api/auth/register", async (req, res) => {
   console.log("\n=== Registration Request Start ===");
   console.log("Full request body:", JSON.stringify(req.body, null, 2));
-  const { userId, password, books } = req.body;
+  const { userId, password, books, photoUrl } = req.body;
 
   try {
     // Create user
     console.log("\n1. Creating user...");
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ userId, password: hashedPassword });
+    const newUser = new User({
+      userId,
+      password: hashedPassword,
+      photoUrl,
+    });
     const savedUser = await newUser.save();
     console.log("User created with ID:", savedUser._id);
 
@@ -211,8 +216,18 @@ app.post("/api/auth/register", async (req, res) => {
       console.log("\nNo books provided in registration");
     }
 
+    // Generate token for the new user
+    const token = jwt.sign(
+      { id: savedUser._id, userId: savedUser.userId },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
     console.log("\n=== Registration Request Complete ===");
-    res.status(201).send("User registered successfully with books");
+    res.status(201).json({
+      message: "User registered successfully with books",
+      token,
+    });
   } catch (error) {
     console.error("\n=== Registration Error ===");
     console.error("Error details:", error);
