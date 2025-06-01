@@ -70,8 +70,16 @@ async function uploadToCloud(file) {
       size: file.size,
     });
 
+    // Generate a safe file name with timestamp and encoded name
+    const timestamp = Date.now();
+    const safeFileName = `${timestamp}-${encodeURIComponent(file.name)}`;
+    console.log("Generated safe file name:", safeFileName);
+
     // Get a signed URL for upload
-    const { signedUrl, publicUrl } = await getSignedUrl(file.name, file.type);
+    const { signedUrl, publicUrl } = await getSignedUrl(
+      safeFileName,
+      file.type
+    );
     console.log("Received signed URL:", signedUrl);
     console.log("Received public URL:", publicUrl);
 
