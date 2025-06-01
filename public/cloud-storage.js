@@ -60,67 +60,44 @@ async function getSignedUrl(fileName, fileType) {
   }
 }
 
-// Function to upload file to Google Cloud Storage
+// Function to upload a file to Google Cloud Storage
 async function uploadToCloud(file) {
   try {
-    console.log("\n=== Starting File Upload ===");
+    console.log("Starting file upload process...");
     console.log("File details:", {
       name: file.name,
       type: file.type,
       size: file.size,
     });
 
-    // Check authentication
-    const token = localStorage.getItem("token");
-    console.log("Auth token present:", !!token);
+    // Get a signed URL for upload
+    const { signedUrl, publicUrl } = await getSignedUrl(file.name, file.type);
+    console.log("Received signed URL:", signedUrl);
+    console.log("Received public URL:", publicUrl);
 
-    // Generate a unique file name
-    const fileName = `${Date.now()}-${file.name.replace(
-      /[^a-zA-Z0-9.-]/g,
-      "_"
-    )}`;
-    console.log("Generated file name:", fileName);
-
-    // Get signed URL
-    console.log("Requesting signed URL...");
-    const { signedUrl, publicUrl } = await getSignedUrl(fileName, file.type);
-    console.log("Got signed URL:", signedUrl);
-    console.log("Got public URL:", publicUrl);
-
-    if (!signedUrl) {
-      throw new Error("No signed URL received from server");
-    }
-
-    // Upload file using signed URL
+    // Upload the file using the signed URL
     console.log("Uploading file to signed URL...");
     const uploadResponse = await fetch(signedUrl, {
       method: "PUT",
-      body: file,
       headers: {
         "Content-Type": file.type,
       },
+      body: file,
     });
 
-    console.log("Upload response status:", uploadResponse.status);
-    console.log(
-      "Upload response headers:",
-      Object.fromEntries(uploadResponse.headers.entries())
-    );
-
     if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error("Upload error response:", errorText);
+      console.error("Upload failed:", uploadResponse);
       throw new Error("Failed to upload file");
     }
 
-    console.log("File uploaded successfully. Public URL:", publicUrl);
-    console.log("=== File Upload Complete ===\n");
+    console.log("File uploaded successfully");
+    console.log("Returning public URL:", publicUrl);
     return publicUrl;
   } catch (error) {
     console.error("\n=== Error Uploading to Cloud ===");
     console.error("Error details:", error);
     console.error("Stack trace:", error.stack);
-    console.error("=============================\n");
+    console.error("==============================\n");
     throw error;
   }
 }
