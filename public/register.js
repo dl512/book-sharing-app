@@ -247,13 +247,27 @@ addBookButton.addEventListener("click", async () => {
           throw new Error("No authentication token received");
         }
 
-        // Verify we have the books array in the response
-        if (!result.books || !Array.isArray(result.books)) {
-          console.error("No books array in response:", result);
-          throw new Error("Invalid response: missing books data");
+        // Fetch user's books after registration
+        console.log("Fetching user's books...");
+        const booksResponse = await fetch(
+          "https://book-sharing-app.onrender.com/api/books",
+          {
+            headers: {
+              Authorization: `Bearer ${result.token}`,
+            },
+          }
+        );
+
+        if (!booksResponse.ok) {
+          throw new Error("Failed to fetch user's books");
         }
 
-        console.log("Books from registration:", result.books);
+        const userBooks = await booksResponse.json();
+        console.log("User's books:", userBooks);
+
+        if (!userBooks || !Array.isArray(userBooks)) {
+          throw new Error("Invalid books data received");
+        }
 
         // Now upload photos for each book
         const totalPhotos = books.filter((book) => book.photoFile).length;
@@ -294,24 +308,28 @@ addBookButton.addEventListener("click", async () => {
 
               console.log("File uploaded successfully to Google Cloud Storage");
 
-              // Get the book ID from the registration response
-              const bookId = result.books[i]?._id;
-              if (!bookId) {
+              // Find the matching book in userBooks by title
+              const matchingBook = userBooks.find(
+                (b) => b.title === book.title
+              );
+              if (!matchingBook || !matchingBook._id) {
                 console.error(
-                  `No book ID found for book ${i + 1}. Full response:`,
-                  result
+                  `No matching book found for "${book.title}". Available books:`,
+                  userBooks
                 );
-                throw new Error(`Missing book ID for book ${i + 1}`);
+                throw new Error(
+                  `Could not find book "${book.title}" in user's books`
+                );
               }
 
               updateLoadingProgress(`Saving photo URL for book ${i + 1}...`);
               console.log(
-                `Updating book ${bookId} with photo URL: ${publicUrl}`
+                `Updating book ${matchingBook._id} with photo URL: ${publicUrl}`
               );
 
               // Update book photo URL in the database
               const updateResponse = await fetch(
-                `https://book-sharing-app.onrender.com/api/books/${bookId}/photo`,
+                `https://book-sharing-app.onrender.com/api/books/${matchingBook._id}/photo`,
                 {
                   method: "PUT",
                   headers: {
