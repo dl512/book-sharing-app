@@ -1052,6 +1052,56 @@ app.get("/api/test", (req, res) => {
   res.json({ message: "Test route working" });
 });
 
+// Update book photo URL
+app.put("/api/books/:id/photo", authenticateToken, async (req, res) => {
+  try {
+    console.log("\n=== Update Book Photo Request Start ===");
+    console.log("Book ID:", req.params.id);
+    console.log("Request body:", req.body);
+
+    const { photoUrl } = req.body;
+    if (!photoUrl) {
+      return res.status(400).json({
+        error: "Missing photo URL",
+        message: "Photo URL is required",
+      });
+    }
+
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({
+        error: "Book not found",
+        message: "The requested book could not be found",
+      });
+    }
+
+    // Verify ownership
+    if (book.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        error: "Not authorized",
+        message: "You are not authorized to update this book",
+      });
+    }
+
+    book.photoUrl = photoUrl;
+    await book.save();
+
+    console.log("Book photo updated successfully");
+    console.log("=== Update Book Photo Request Complete ===\n");
+
+    res.json(book);
+  } catch (error) {
+    console.error("\n=== Update Book Photo Error ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("=====================\n");
+    res.status(500).json({
+      error: "Error updating book photo",
+      message: error.message || "An unexpected error occurred",
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("=== Global Error Handler ===");
