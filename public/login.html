@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Sharing App - Login</title>
+    <title>Kinder - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
         }
 
         .container {
@@ -23,13 +29,23 @@
             background: white;
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px;
         }
 
         h1 {
             color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
             margin-bottom: 2rem;
+            font-style: italic;
+            line-height: 1.4;
         }
 
         form {
@@ -79,7 +95,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>Login</h1>
+        <h1>Kinder</h1>
+        <p class="subtitle">When Kindle meets Tinder: Meeting new friends by their books not their looks</p>
         <form id="login-form">
             <input type="text" id="login-userid" placeholder="User ID" required>
             <input type="password" id="login-password" placeholder="Password" required>
@@ -88,5 +105,6 @@
         <a href="index.html" class="back-link">Back to Home</a>
     </div>
     <script src="script.js"></script>
+    <script src="login.js"></script>
 </body>
 </html> 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Sharing App - Register</title>
+    <title>Kinder - Register</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -36,8 +36,16 @@
 
         h1 {
             color: #2c3e50;
-            margin-bottom: 2rem;
+            margin-bottom: 0.5rem;
             font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+            line-height: 1.4;
         }
 
         .progress-bar {
@@ -206,11 +214,60 @@
             margin-top: 0.5rem;
             overflow: hidden;
         }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .loading-progress {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- Add loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing your registration...</div>
+        <div class="loading-progress" id="loading-progress"></div>
+    </div>
+
     <div class="container">
-        <h1>Register</h1>
+        <h1>Kinder</h1>
+        <p class="subtitle">When Kindle meets Tinder: Meeting new friends by their books not their looks</p>
         <div class="progress-bar" style="display: none;">
             <div class="progress" id="progress-bar"></div>
         </div>
@@ -268,123 +325,6 @@
     </div>
     <script src="cloud-storage.js"></script>
     <script src="script.js"></script>
-    <script>
-        let currentBook = 1;
-        const totalBooks = 3;
-        const books = [];
-
-        // Update progress bar
-        function updateProgress() {
-            const progress = (currentBook / totalBooks) * 100;
-            document.getElementById('progress-bar').style.width = `${progress}%`;
-            document.getElementById('book-counter').textContent = `Book ${currentBook} of ${totalBooks}`;
-        }
-
-        // Show book preview
-        function addBookPreview(book) {
-            const preview = document.createElement('div');
-            preview.className = 'book-preview';
-            preview.innerHTML = `
-                <h3>${book.title}</h3>
-                <p>by ${book.author}</p>
-                <p>${book.description}</p>
-                ${book.photoUrl ? `<img src="${book.photoUrl}" alt="${book.title}" style="max-width: 200px; margin-top: 10px;">` : ''}
-            `;
-            document.getElementById('books-preview').appendChild(preview);
-        }
-
-        // Handle next button click
-        document.getElementById('next-to-books').addEventListener('click', () => {
-            const userId = document.getElementById('register-userid').value;
-            const password = document.getElementById('register-password').value;
-
-            if (!userId || !password) {
-                alert('Please fill in all fields');
-                return;
-            }
-
-            // Show progress bar and book counter
-            document.querySelector('.progress-bar').style.display = 'block';
-            document.getElementById('book-counter').style.display = 'block';
-            
-            document.getElementById('user-section').classList.remove('active');
-            document.getElementById('book-section').classList.add('active');
-            
-            // Initialize progress
-            updateProgress();
-        });
-
-        // Handle add book button click
-        document.getElementById('add-book').addEventListener('click', async () => {
-            const title = document.getElementById('book-title').value;
-            const author = document.getElementById('book-author').value;
-            const description = document.getElementById('book-description').value;
-            const sharingOptions = {
-                forSale: document.getElementById('forSale').checked,
-                forExchange: document.getElementById('forExchange').checked,
-                forBorrow: document.getElementById('forBorrow').checked,
-                forDiscussion: document.getElementById('forDiscussion').checked
-            };
-
-            if (!title || !author || !description) {
-                alert('Please fill in all book details');
-                return;
-            }
-
-            console.log('\nAdding book:', { title, author, description, sharingOptions });
-            const book = { title, author, description, sharingOptions };
-            books.push(book);
-            addBookPreview(book);
-
-            // Clear form
-            document.getElementById('book-title').value = '';
-            document.getElementById('book-author').value = '';
-            document.getElementById('book-description').value = '';
-            document.getElementById('forSale').checked = false;
-            document.getElementById('forExchange').checked = false;
-            document.getElementById('forBorrow').checked = false;
-            document.getElementById('forDiscussion').checked = false;
-
-            // Update progress
-            currentBook++;
-            updateProgress();
-
-            // If all books are added, proceed with registration
-            if (currentBook > totalBooks) {
-                // Store user data and books
-                const userData = {
-                    userId: document.getElementById('register-userid').value,
-                    password: document.getElementById('register-password').value,
-                    books: books
-                };
-
-                console.log('\nSending registration data:', JSON.stringify(userData, null, 2));
-
-                try {
-                    // Send registration request
-                    const response = await fetch('https://book-sharing-app.onrender.com/api/auth/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(userData)
-                    });
-
-                    const result = await response.text();
-                    console.log('\nRegistration response:', result);
-
-                    if (!response.ok) {
-                        throw new Error(result || 'Registration failed');
-                    }
-
-                    alert(result);
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('\nRegistration error:', error);
-                    alert('Registration failed: ' + error.message);
-                }
-            }
-        });
-    </script>
+    <script src="register.js"></script>
 </body>
 </html> 

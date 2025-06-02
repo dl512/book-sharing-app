@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Sharing App - Welcome</title>
+    <title>Kinder - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -29,14 +30,22 @@
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
             margin: 20px;
         }
 
         h1 {
             color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
             margin-bottom: 2rem;
-            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-style: italic;
+            line-height: 1.4;
         }
 
         .welcome-text {
@@ -101,13 +110,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Book Sharing App</h1>
-        <p class="welcome-text">
-            Welcome to our book sharing community! Join us to share your favorite books and connect with other readers.
-        </p>
-        <div class="button-container">
-            <a href="register.html" class="btn btn-register">Register</a>
-            <a href="login.html" class="btn btn-login">Login</a>
+        <h1>Kinder</h1>
+        <p class="subtitle">When Kindle meets Tinder: Meeting new friends by their books not their looks</p>
+        <div class="button-group">
+            <a href="login.html" class="btn">Login</a>
+            <a href="register.html" class="btn">Register</a>
         </div>
     </div>
 </body>
