@@ -2,6 +2,7 @@
 const bookPhotoInput = document.getElementById("book-photo");
 const bookPhotoPreview = document.getElementById("book-photo-preview");
 let selectedBookPhoto = null;
+let books = [];
 
 bookPhotoInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
@@ -9,7 +10,9 @@ bookPhotoInput.addEventListener("change", (e) => {
     selectedBookPhoto = file;
     const reader = new FileReader();
     reader.onload = (e) => {
-      bookPhotoPreview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+      bookPhotoPreview.innerHTML = `
+        <img src="${e.target.result}" alt="Book Preview" style="max-width: 100%; height: auto; border-radius: 4px;">
+      `;
     };
     reader.readAsDataURL(file);
   }
@@ -74,25 +77,37 @@ document.getElementById("add-book").addEventListener("click", async () => {
   }
 
   try {
-    // Upload book photo if selected
-    let photoUrl = null;
-    if (selectedBookPhoto) {
-      console.log("Uploading book photo...");
-      photoUrl = await uploadToCloud(selectedBookPhoto);
-      console.log("Book photo uploaded successfully. URL:", photoUrl);
-    }
-
+    // Store the book data with the photo file for later upload
     const book = {
       title,
       author,
       description,
       sharingOptions,
-      photoUrl,
+      photoFile: selectedBookPhoto, // Store the file object for later upload
     };
 
-    console.log("Adding book with data:", book);
+    console.log("Adding book with data:", {
+      ...book,
+      photoFile: book.photoFile ? "File present" : "No file",
+    });
     books.push(book);
-    addBookPreview(book);
+
+    // Show preview with local file URL
+    const preview = document.createElement("div");
+    preview.className = "book-preview";
+    preview.innerHTML = `
+      <h3>${book.title}</h3>
+      <p>by ${book.author}</p>
+      <p>${book.description}</p>
+      ${
+        selectedBookPhoto
+          ? `<img src="${URL.createObjectURL(selectedBookPhoto)}" alt="${
+              book.title
+            }" style="max-width: 200px; margin-top: 10px;">`
+          : ""
+      }
+    `;
+    document.getElementById("books-preview").appendChild(preview);
 
     // Clear form
     document.getElementById("book-title").value = "";
@@ -110,8 +125,20 @@ document.getElementById("add-book").addEventListener("click", async () => {
     currentBook++;
     updateProgress();
 
-    // If all books are added, proceed with registration
+    // If all books are added, proceed with photo uploads and registration
     if (currentBook > totalBooks) {
+      console.log("\nAll books added, starting photo uploads...");
+
+      // Upload all book photos
+      for (let book of books) {
+        if (book.photoFile) {
+          console.log(`Uploading photo for book: ${book.title}`);
+          book.photoUrl = await uploadToCloud(book.photoFile);
+          console.log(`Photo uploaded successfully. URL: ${book.photoUrl}`);
+          delete book.photoFile; // Remove the file object before sending to server
+        }
+      }
+
       // Store user data and books
       const userData = {
         userId: document.getElementById("register-userid").value,

@@ -235,8 +235,8 @@
                 <textarea id="book-description" placeholder="Book Description" required></textarea>
                 <div class="form-group">
                     <label for="book-photo">Book Photo</label>
-                    <input type="file" id="book-photo" accept="image/*">
-                    <div id="book-photo-preview" class="photo-preview"></div>
+                    <input type="file" id="book-photo" accept="image/*" class="form-control">
+                    <div id="book-photo-preview" class="mt-2" style="max-width: 200px;"></div>
                 </div>
                 <div class="form-group">
                     <label>Sharing Options</label>
@@ -267,6 +267,7 @@
         <a href="index.html" class="back-link">Back to Home</a>
     </div>
     <script src="script.js"></script>
+    <script src="cloud-storage.js"></script>
     <script>
         let currentBook = 1;
         const totalBooks = 3;
@@ -287,6 +288,7 @@
                 <h3>${book.title}</h3>
                 <p>by ${book.author}</p>
                 <p>${book.description}</p>
+                ${book.photoUrl ? `<img src="${book.photoUrl}" alt="${book.title}" style="max-width: 200px; margin-top: 10px;">` : ''}
             `;
             document.getElementById('books-preview').appendChild(preview);
         }
