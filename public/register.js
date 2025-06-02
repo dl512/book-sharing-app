@@ -80,9 +80,17 @@ document.getElementById("add-book").addEventListener("click", async () => {
     // Upload photo immediately if selected
     let photoUrl = null;
     if (selectedBookPhoto) {
+      console.log("\n=== Starting Photo Upload Process ===");
       console.log(`Uploading photo for book: ${title}`);
+      console.log("Selected file:", {
+        name: selectedBookPhoto.name,
+        type: selectedBookPhoto.type,
+        size: selectedBookPhoto.size,
+      });
+
       try {
         // Get a signed URL for upload
+        console.log("Requesting signed URL...");
         const { signedUrl, publicUrl } = await getSignedUrl(
           `${Date.now()}-${selectedBookPhoto.name}`,
           selectedBookPhoto.type
@@ -108,8 +116,13 @@ document.getElementById("add-book").addEventListener("click", async () => {
         console.log("File uploaded successfully");
         photoUrl = publicUrl;
         console.log(`Photo uploaded successfully. URL: ${photoUrl}`);
+        console.log("=== Photo Upload Process Complete ===\n");
       } catch (error) {
+        console.error("\n=== Photo Upload Error ===");
         console.error(`Error uploading photo for book ${title}:`, error);
+        console.error("Error details:", error.message);
+        console.error("Stack trace:", error.stack);
+        console.error("===========================\n");
         throw error;
       }
     }
