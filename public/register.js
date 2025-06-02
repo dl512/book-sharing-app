@@ -77,22 +77,56 @@ document.getElementById("add-book").addEventListener("click", async () => {
   }
 
   try {
-    // Store the book data with the photo file for later upload
+    // Upload photo immediately if selected
+    let photoUrl = null;
+    if (selectedBookPhoto) {
+      console.log(`Uploading photo for book: ${title}`);
+      try {
+        // Get a signed URL for upload
+        const { signedUrl, publicUrl } = await getSignedUrl(
+          `${Date.now()}-${selectedBookPhoto.name}`,
+          selectedBookPhoto.type
+        );
+        console.log("Received signed URL:", signedUrl);
+        console.log("Received public URL:", publicUrl);
+
+        // Upload the file using the signed URL
+        console.log("Uploading file to signed URL...");
+        const uploadResponse = await fetch(signedUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": selectedBookPhoto.type,
+          },
+          body: selectedBookPhoto,
+        });
+
+        if (!uploadResponse.ok) {
+          console.error("Upload failed:", uploadResponse);
+          throw new Error("Failed to upload file");
+        }
+
+        console.log("File uploaded successfully");
+        photoUrl = publicUrl;
+        console.log(`Photo uploaded successfully. URL: ${photoUrl}`);
+      } catch (error) {
+        console.error(`Error uploading photo for book ${title}:`, error);
+        throw error;
+      }
+    }
+
+    // Create book object with photo URL
     const book = {
       title,
       author,
       description,
       sharingOptions,
-      photoFile: selectedBookPhoto, // Store the file object for later upload
+      photoUrl,
     };
 
-    console.log("Adding book with data:", {
-      ...book,
-      photoFile: book.photoFile ? "File present" : "No file",
-    });
+    console.log("Adding book with data:", book);
     books.push(book);
 
-    // Show preview with local file URL
+    // Show preview with the uploaded photo URL
     const preview = document.createElement("div");
     preview.className = "book-preview";
     preview.innerHTML = `
@@ -100,10 +134,8 @@ document.getElementById("add-book").addEventListener("click", async () => {
       <p>by ${book.author}</p>
       <p>${book.description}</p>
       ${
-        selectedBookPhoto
-          ? `<img src="${URL.createObjectURL(selectedBookPhoto)}" alt="${
-              book.title
-            }" style="max-width: 200px; margin-top: 10px;">`
+        photoUrl
+          ? `<img src="${photoUrl}" alt="${book.title}" style="max-width: 200px; margin-top: 10px;">`
           : ""
       }
     `;
@@ -125,52 +157,8 @@ document.getElementById("add-book").addEventListener("click", async () => {
     currentBook++;
     updateProgress();
 
-    // If all books are added, proceed with photo uploads and registration
+    // If all books are added, proceed with registration
     if (currentBook > totalBooks) {
-      console.log("\nAll books added, starting photo uploads...");
-
-      // Upload all book photos
-      for (let book of books) {
-        if (book.photoFile) {
-          console.log(`Uploading photo for book: ${book.title}`);
-          try {
-            // Get a signed URL for upload
-            const { signedUrl, publicUrl } = await getSignedUrl(
-              `${Date.now()}-${book.photoFile.name}`,
-              book.photoFile.type
-            );
-            console.log("Received signed URL:", signedUrl);
-            console.log("Received public URL:", publicUrl);
-
-            // Upload the file using the signed URL
-            console.log("Uploading file to signed URL...");
-            const uploadResponse = await fetch(signedUrl, {
-              method: "PUT",
-              headers: {
-                "Content-Type": book.photoFile.type,
-              },
-              body: book.photoFile,
-            });
-
-            if (!uploadResponse.ok) {
-              console.error("Upload failed:", uploadResponse);
-              throw new Error("Failed to upload file");
-            }
-
-            console.log("File uploaded successfully");
-            book.photoUrl = publicUrl;
-            console.log(`Photo uploaded successfully. URL: ${book.photoUrl}`);
-            delete book.photoFile; // Remove the file object before sending to server
-          } catch (error) {
-            console.error(
-              `Error uploading photo for book ${book.title}:`,
-              error
-            );
-            throw error;
-          }
-        }
-      }
-
       // Store user data and books
       const userData = {
         userId: document.getElementById("register-userid").value,
