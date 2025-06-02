@@ -133,9 +133,41 @@ document.getElementById("add-book").addEventListener("click", async () => {
       for (let book of books) {
         if (book.photoFile) {
           console.log(`Uploading photo for book: ${book.title}`);
-          book.photoUrl = await uploadToCloud(book.photoFile);
-          console.log(`Photo uploaded successfully. URL: ${book.photoUrl}`);
-          delete book.photoFile; // Remove the file object before sending to server
+          try {
+            // Get a signed URL for upload
+            const { signedUrl, publicUrl } = await getSignedUrl(
+              `${Date.now()}-${book.photoFile.name}`,
+              book.photoFile.type
+            );
+            console.log("Received signed URL:", signedUrl);
+            console.log("Received public URL:", publicUrl);
+
+            // Upload the file using the signed URL
+            console.log("Uploading file to signed URL...");
+            const uploadResponse = await fetch(signedUrl, {
+              method: "PUT",
+              headers: {
+                "Content-Type": book.photoFile.type,
+              },
+              body: book.photoFile,
+            });
+
+            if (!uploadResponse.ok) {
+              console.error("Upload failed:", uploadResponse);
+              throw new Error("Failed to upload file");
+            }
+
+            console.log("File uploaded successfully");
+            book.photoUrl = publicUrl;
+            console.log(`Photo uploaded successfully. URL: ${book.photoUrl}`);
+            delete book.photoFile; // Remove the file object before sending to server
+          } catch (error) {
+            console.error(
+              `Error uploading photo for book ${book.title}:`,
+              error
+            );
+            throw error;
+          }
         }
       }
 
