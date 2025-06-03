@@ -117,10 +117,8 @@
             object-fit: cover;
             display: block;
             background-color: #f8f9fa;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+            position: relative;
+            z-index: 1;
         }
 
         .book-image .placeholder {
@@ -213,13 +211,16 @@
             display: flex;
             justify-content: center;
             gap: 32px;
-            z-index: 3;
+            z-index: 10;
             padding: 0 24px;
         }
 
         .nav-button {
-            width: 64px;
-            height: 64px;
+            width: 55px;
+            height: 55px;
+            position: relative;
+            z-index: 4;
+            pointer-events: auto;
             border-radius: 50%;
             border: none;
             background: #fff;
@@ -229,8 +230,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
-            font-size: 2rem;
-            pointer-events: auto;
+            font-size: 1.5rem;
         }
 
         .nav-button.skip {
@@ -664,8 +664,7 @@
                 height: 420px;
                 border-radius: 18px;
                 position: relative;
-                overflow: hidden;
-                width: 100%;
+                overflow: visible;
             }
 
             .book-image img {
@@ -674,6 +673,8 @@
                 object-fit: cover;
                 display: block;
                 background-color: #f8f9fa;
+                position: relative;
+                z-index: 1;
             }
 
             .action-buttons {
@@ -684,9 +685,8 @@
                 display: flex;
                 justify-content: center;
                 gap: 32px;
-                z-index: 3;
+                z-index: 10;
                 padding: 0 24px;
-                pointer-events: auto;
             }
 
             .nav-button {
@@ -1047,12 +1047,6 @@
             container.innerHTML = `
                 <div class="book-card" id="current-card">
                     <div class="book-image">
-                        ${book.photoUrl ? 
-                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\\'fas fa-book\\'></i>';" loading="lazy">` :
-                            `<div class="placeholder">
-                                <i class="fas fa-book"></i>
-                            </div>`
-                        }
                         <div class="action-buttons">
                             <button class="nav-button skip" onclick="skipBook()">
                                 <i class="fas fa-times"></i>
@@ -1061,6 +1055,12 @@
                                 <i class="fas fa-star"></i>
                             </button>
                         </div>
+                        ${book.photoUrl ? 
+                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\\'fas fa-book\\'></i>';" loading="lazy">` :
+                            `<div class="placeholder">
+                                <i class="fas fa-book"></i>
+                            </div>`
+                        }
                     </div>
                     <div class="book-content">
                         <div class="book-title-author">
