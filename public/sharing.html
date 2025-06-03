@@ -1241,10 +1241,11 @@
                 card.classList.add('slide-right');
                 
                 // Get the chat room ID from the response
-                if (result.chatRoomIds && result.chatRoomIds.length > 0) {
-                    const chatRoomId = result.chatRoomIds[result.chatRoomIds.length - 1];
+                if (result.chatRoomId) {
+                    // Store the target section before navigating
+                    localStorage.setItem('targetSection', 'chat-section');
                     // Navigate to the chat room
-                    window.location.href = `chat-room.html?id=${chatRoomId}`;
+                    window.location.href = `chat-room.html?id=${result.chatRoomId}`;
                 } else {
                     // If no chat room was created, move to next book
                     setTimeout(() => {

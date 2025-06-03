@@ -206,6 +206,55 @@
             // Navigate to sharing page
             window.location.href = 'sharing.html';
         }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Get chat room ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatRoomId = urlParams.get('id');
+            if (!chatRoomId) {
+                console.error('No chat room ID found');
+                return;
+            }
+
+            // Send to server
+            fetch(`https://book-sharing-app.onrender.com/api/chatrooms/${chatRoomId}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+                // Clear input after successful send
+                messageInput.value = '';
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+            });
+        }
+
+        // Add event listener for Enter key
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default form submission
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html> 
