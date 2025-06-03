@@ -108,6 +108,7 @@
             overflow: hidden;
             position: relative;
             box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            background-color: #f8f9fa;
         }
 
         .book-image img {
@@ -115,6 +116,7 @@
             height: 100%;
             object-fit: cover;
             display: block;
+            background-color: #f8f9fa;
         }
 
         .book-image .placeholder {
@@ -1034,7 +1036,7 @@
                 <div class="book-card" id="current-card">
                     <div class="book-image">
                         ${book.photoUrl ? 
-                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';">` :
+                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';" loading="lazy">` :
                             `<div class="placeholder">
                                 <i class="fas fa-book"></i>
                             </div>`
@@ -1166,11 +1168,18 @@
                 const card = document.getElementById('current-card');
                 card.classList.add('slide-right');
                 
-                // Move to next book after animation
-                setTimeout(() => {
-                    currentBookIndex++;
-                    showCurrentBook();
-                }, 300);
+                // Get the chat room ID from the response
+                if (result.chatRoomIds && result.chatRoomIds.length > 0) {
+                    const chatRoomId = result.chatRoomIds[result.chatRoomIds.length - 1];
+                    // Navigate to the chat room
+                    window.location.href = `chat-room.html?id=${chatRoomId}`;
+                } else {
+                    // If no chat room was created, move to next book
+                    setTimeout(() => {
+                        currentBookIndex++;
+                        showCurrentBook();
+                    }, 300);
+                }
             } catch (error) {
                 console.error('Error liking book:', error);
                 const container = document.getElementById('book-list');
@@ -1293,7 +1302,7 @@
                                 <div class="book-card">
                                     <div class="book-image">
                                         ${book.photoUrl ? 
-                                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';">` :
+                                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';" loading="lazy">` :
                                             `<div class="placeholder">
                                                 <i class="fas fa-book"></i>
                                             </div>`
