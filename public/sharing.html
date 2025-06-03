@@ -1054,35 +1054,48 @@
 
             // Function to handle image loading with retry
             const imageHtml = book.photoUrl ? 
-                `<img src="${book.photoUrl}" alt="${book.title}" 
-                    onerror="
-                        console.log('Image load error for:', this.src);
-                        if (!this.dataset.retried) {
-                            this.dataset.retried = 'true';
-                            // Try to load through a proxy-like approach
-                            const originalSrc = this.src;
-                            fetch(originalSrc)
-                                .then(response => response.blob())
-                                .then(blob => {
-                                    const objectUrl = URL.createObjectURL(blob);
-                                    this.src = objectUrl;
-                                })
-                                .catch(err => {
-                                    console.error('Failed to load image:', err);
+                `<div class="book-image-container">
+                    <img src="${book.photoUrl}" alt="${book.title}" 
+                        onerror="
+                            console.log('Image load error for:', this.src);
+                            if (!this.dataset.retried) {
+                                this.dataset.retried = 'true';
+                                // Try to load through a proxy-like approach
+                                const originalSrc = this.src;
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('GET', originalSrc, true);
+                                xhr.responseType = 'blob';
+                                xhr.onload = function() {
+                                    if (this.status === 200) {
+                                        const blob = this.response;
+                                        const objectUrl = URL.createObjectURL(blob);
+                                        this.src = objectUrl;
+                                    } else {
+                                        this.onerror = null;
+                                        this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
+                                        this.parentElement.classList.add('placeholder');
+                                        this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
+                                    }
+                                }.bind(this);
+                                xhr.onerror = function() {
+                                    console.error('Failed to load image:', originalSrc);
                                     this.onerror = null;
                                     this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
                                     this.parentElement.classList.add('placeholder');
                                     this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
-                                });
-                        } else {
-                            this.onerror = null;
-                            this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
-                            this.parentElement.classList.add('placeholder');
-                            this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
-                        }"
-                    onload="console.log('Image loaded successfully:', this.src)"
-                    loading="lazy"
-                    crossorigin="anonymous">` :
+                                }.bind(this);
+                                xhr.send();
+                            } else {
+                                this.onerror = null;
+                                this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
+                                this.parentElement.classList.add('placeholder');
+                                this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
+                            }"
+                        onload="console.log('Image loaded successfully:', this.src)"
+                        loading="lazy"
+                        crossorigin="anonymous">
+                    <a href="${book.photoUrl}" target="_blank" class="image-fallback-link" style="display: none;">View Image</a>
+                </div>` :
                 `<div class="placeholder">
                     <i class="fas fa-book"></i>
                 </div>`;
@@ -1118,6 +1131,21 @@
             card.addEventListener('touchstart', handleTouchStart);
             card.addEventListener('touchmove', handleTouchMove);
             card.addEventListener('touchend', handleTouchEnd);
+
+            // Add click handler for images that failed to load
+            const imageContainer = card.querySelector('.book-image-container');
+            if (imageContainer) {
+                const img = imageContainer.querySelector('img');
+                const fallbackLink = imageContainer.querySelector('.image-fallback-link');
+                
+                img.addEventListener('error', () => {
+                    fallbackLink.style.display = 'block';
+                });
+                
+                img.addEventListener('load', () => {
+                    fallbackLink.style.display = 'none';
+                });
+            }
         }
 
         function handleTouchStart(e) {
