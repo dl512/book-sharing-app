@@ -1055,36 +1055,14 @@
             // Function to handle image loading with retry
             const imageHtml = book.photoUrl ? 
                 `<div class="book-image-container">
-                    <img src="${book.photoUrl}" alt="${book.title}" 
+                    <img src="${book.photoUrl}?not-from-cache-please=${Date.now()}" alt="${book.title}" 
                         onerror="
                             console.log('Image load error for:', this.src);
                             if (!this.dataset.retried) {
                                 this.dataset.retried = 'true';
-                                // Try to load through a proxy-like approach
-                                const originalSrc = this.src;
-                                const xhr = new XMLHttpRequest();
-                                xhr.open('GET', originalSrc, true);
-                                xhr.responseType = 'blob';
-                                xhr.onload = function() {
-                                    if (this.status === 200) {
-                                        const blob = this.response;
-                                        const objectUrl = URL.createObjectURL(blob);
-                                        this.src = objectUrl;
-                                    } else {
-                                        this.onerror = null;
-                                        this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
-                                        this.parentElement.classList.add('placeholder');
-                                        this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
-                                    }
-                                }.bind(this);
-                                xhr.onerror = function() {
-                                    console.error('Failed to load image:', originalSrc);
-                                    this.onerror = null;
-                                    this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
-                                    this.parentElement.classList.add('placeholder');
-                                    this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
-                                }.bind(this);
-                                xhr.send();
+                                // Try with a different cache-busting parameter
+                                const originalSrc = this.src.split('?')[0];
+                                this.src = originalSrc + '?nocache=' + Date.now();
                             } else {
                                 this.onerror = null;
                                 this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
