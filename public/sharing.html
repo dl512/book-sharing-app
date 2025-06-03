@@ -653,11 +653,14 @@
             .book-card {
                 border-radius: 18px;
                 min-height: 420px;
+                position: relative;
             }
 
             .book-image {
                 height: 420px;
                 border-radius: 18px;
+                position: relative;
+                overflow: hidden;
             }
 
             .book-image img {
@@ -666,26 +669,30 @@
                 object-fit: cover;
                 display: block;
                 background-color: #f8f9fa;
-                -webkit-backface-visibility: hidden;
-                backface-visibility: hidden;
-                transform: translateZ(0);
-                -webkit-transform: translateZ(0);
-            }
-
-            .book-overlay {
-                border-radius: 0 0 18px 18px;
-                top: 12px;
-                padding: 0 12px;
             }
 
             .action-buttons {
+                position: absolute;
+                left: 0;
+                right: 0;
                 bottom: 12px;
+                display: flex;
+                justify-content: center;
+                gap: 32px;
+                z-index: 3;
+                padding: 0 24px;
             }
 
-            .book-info {
-                border-radius: 16px;
-                margin-top: 28px;
-                padding: 1rem 0.8rem 1rem 0.8rem;
+            .nav-button {
+                width: 55px;
+                height: 55px;
+                position: relative;
+                z-index: 4;
+            }
+
+            .book-content {
+                padding: 24px 16px;
+                margin-top: -24px;
             }
 
             .book-title {
@@ -694,11 +701,6 @@
 
             .book-author {
                 font-size: 1rem;
-            }
-
-            .nav-button {
-                width: 55px;
-                height: 55px;
             }
 
             .bottom-nav {
@@ -711,10 +713,6 @@
 
             .nav-item span {
                 font-size: 11px;
-            }
-
-            .sharing-options {
-                bottom: 80px;
             }
         }
 
