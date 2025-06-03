@@ -648,12 +648,16 @@
             .container {
                 margin: 10px;
                 padding-bottom: 80px;
+                width: 100%;
+                max-width: 100%;
             }
 
             .book-card {
                 border-radius: 18px;
                 min-height: 420px;
                 position: relative;
+                margin: 0;
+                width: 100%;
             }
 
             .book-image {
@@ -661,6 +665,7 @@
                 border-radius: 18px;
                 position: relative;
                 overflow: hidden;
+                width: 100%;
             }
 
             .book-image img {
@@ -681,6 +686,7 @@
                 gap: 32px;
                 z-index: 3;
                 padding: 0 24px;
+                pointer-events: auto;
             }
 
             .nav-button {
@@ -688,11 +694,15 @@
                 height: 55px;
                 position: relative;
                 z-index: 4;
+                pointer-events: auto;
             }
 
             .book-content {
                 padding: 24px 16px;
                 margin-top: -24px;
+                position: relative;
+                z-index: 2;
+                background: white;
             }
 
             .book-title {
@@ -972,7 +982,7 @@
                 }
 
                 const allBooks = await response.json();
-                console.log('All books received:', allBooks);
+                console.log('All books received:', JSON.stringify(allBooks, null, 2));
                 
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
@@ -985,7 +995,7 @@
                     return isFromOtherUser && hasNotLiked;
                 });
 
-                console.log('Filtered books:', books);
+                console.log('Filtered books:', JSON.stringify(books, null, 2));
 
                 if (books.length === 0) {
                     showNoBooks();
