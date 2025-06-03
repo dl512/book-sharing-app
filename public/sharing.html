@@ -669,7 +669,7 @@
                 height: 420px;
                 border-radius: 18px;
                 position: relative;
-                overflow: visible;
+                overflow: hidden;
             }
 
             .image-container {
@@ -695,15 +695,16 @@
                 display: flex;
                 justify-content: center;
                 gap: 32px;
-                z-index: 10;
+                z-index: 100;
                 padding: 0 24px;
+                pointer-events: none;
             }
 
             .nav-button {
                 width: 55px;
                 height: 55px;
                 position: relative;
-                z-index: 4;
+                z-index: 100;
                 pointer-events: auto;
             }
 
