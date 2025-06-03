@@ -6,6 +6,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const { Storage } = require("@google-cloud/storage");
+const axios = require("axios");
 
 const app = express();
 app.use(cors());
@@ -1098,6 +1099,61 @@ app.put("/api/books/:id/photo", authenticateToken, async (req, res) => {
     res.status(500).json({
       error: "Error updating book photo",
       message: error.message || "An unexpected error occurred",
+    });
+  }
+});
+
+// Add the new endpoint for loading images as base64
+app.post("/api/load-images", authenticateToken, async (req, res) => {
+  try {
+    console.log("\n=== Loading Images Request Start ===");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+
+    const { images } = req.body;
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json({
+        error: "Invalid request",
+        message: "images array is required",
+      });
+    }
+
+    const fetchImagePromises = images.map(async (imageUrl) => {
+      try {
+        console.log("Fetching image:", imageUrl);
+        const response = await axios.get(imageUrl, {
+          responseType: "arraybuffer",
+          headers: {
+            Accept: "image/*",
+          },
+        });
+
+        const contentType = response.headers["content-type"];
+        const imageBuffer = Buffer.from(response.data, "binary");
+        const base64Image = imageBuffer.toString("base64");
+        return `data:${contentType};base64,${base64Image}`;
+      } catch (error) {
+        console.error("Error fetching image:", imageUrl, error.message);
+        return null;
+      }
+    });
+
+    const base64Images = await Promise.all(fetchImagePromises);
+    const validImages = base64Images.filter((img) => img !== null);
+
+    console.log(
+      `Successfully converted ${validImages.length} of ${images.length} images`
+    );
+    console.log("=== Loading Images Request Complete ===\n");
+
+    res.json({ images: validImages });
+  } catch (error) {
+    console.error("\n=== Error Loading Images ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("===========================\n");
+    res.status(500).json({
+      error: "Error loading images",
+      message: error.message,
     });
   }
 });

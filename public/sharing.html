@@ -960,26 +960,6 @@
                 const allBooks = await response.json();
                 console.log('All books received:', allBooks);
                 
-                // Log photo URLs for debugging
-                allBooks.forEach(book => {
-                    if (book.photoUrl) {
-                        // Check if URL is properly formatted
-                        try {
-                            const url = new URL(book.photoUrl);
-                            console.log('Book photo URL details:', {
-                                title: book.title,
-                                originalUrl: book.photoUrl,
-                                protocol: url.protocol,
-                                hostname: url.hostname,
-                                pathname: url.pathname,
-                                isSecure: url.protocol === 'https:'
-                            });
-                        } catch (e) {
-                            console.error('Invalid URL format:', book.photoUrl);
-                        }
-                    }
-                });
-                
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
                 console.log('Current user ID:', userId);
@@ -988,14 +968,6 @@
                 books = allBooks.filter(book => {
                     const isFromOtherUser = book.userId._id !== userId;
                     const hasNotLiked = !book.likes.some(like => like._id === userId);
-                    console.log('Book filtering:', {
-                        bookId: book._id,
-                        bookTitle: book.title,
-                        isFromOtherUser,
-                        hasNotLiked,
-                        bookUserId: book.userId._id,
-                        bookLikes: book.likes
-                    });
                     return isFromOtherUser && hasNotLiked;
                 });
 
@@ -1004,6 +976,8 @@
                 if (books.length === 0) {
                     showNoBooks();
                 } else {
+                    // Load images as base64 before showing books
+                    await loadImagesAsBase64();
                     showCurrentBook();
                 }
             } catch (error) {
@@ -1016,6 +990,46 @@
                         <p>Please try refreshing the page.</p>
                     </div>
                 `;
+            }
+        }
+
+        async function loadImagesAsBase64() {
+            try {
+                const token = localStorage.getItem('token');
+                const imageUrls = books.map(book => book.photoUrl).filter(url => url);
+                
+                if (imageUrls.length === 0) return;
+
+                console.log('Loading images as base64...');
+                const response = await fetch('https://book-sharing-app.onrender.com/api/load-images', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ images: imageUrls })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load images');
+                }
+
+                const { images: base64Images } = await response.json();
+                
+                // Update book photoUrls with base64 data
+                books.forEach((book, index) => {
+                    if (book.photoUrl) {
+                        const base64Image = base64Images[index];
+                        if (base64Image) {
+                            book.photoUrl = base64Image;
+                        }
+                    }
+                });
+
+                console.log('Images loaded successfully');
+            } catch (error) {
+                console.error('Error loading images:', error);
+                // Continue showing books even if image loading fails
             }
         }
 
@@ -1052,27 +1066,12 @@
                 })
                 .join('');
 
-            // Function to handle image loading with retry
+            // Function to handle image loading
             const imageHtml = book.photoUrl ? 
                 `<div class="book-image-container">
-                    <img src="${book.photoUrl}?not-from-cache-please=${Date.now()}" alt="${book.title}" 
-                        onerror="
-                            console.log('Image load error for:', this.src);
-                            if (!this.dataset.retried) {
-                                this.dataset.retried = 'true';
-                                // Try with a different cache-busting parameter
-                                const originalSrc = this.src.split('?')[0];
-                                this.src = originalSrc + '?nocache=' + Date.now();
-                            } else {
-                                this.onerror = null;
-                                this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
-                                this.parentElement.classList.add('placeholder');
-                                this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
-                            }"
-                        onload="console.log('Image loaded successfully:', this.src)"
-                        loading="lazy"
-                        crossorigin="anonymous">
-                    <a href="${book.photoUrl}" target="_blank" class="image-fallback-link" style="display: none;">View Image</a>
+                    <img src="${book.photoUrl}" alt="${book.title}" 
+                        onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';"
+                        loading="lazy">
                 </div>` :
                 `<div class="placeholder">
                     <i class="fas fa-book"></i>
@@ -1109,21 +1108,6 @@
             card.addEventListener('touchstart', handleTouchStart);
             card.addEventListener('touchmove', handleTouchMove);
             card.addEventListener('touchend', handleTouchEnd);
-
-            // Add click handler for images that failed to load
-            const imageContainer = card.querySelector('.book-image-container');
-            if (imageContainer) {
-                const img = imageContainer.querySelector('img');
-                const fallbackLink = imageContainer.querySelector('.image-fallback-link');
-                
-                img.addEventListener('error', () => {
-                    fallbackLink.style.display = 'block';
-                });
-                
-                img.addEventListener('load', () => {
-                    fallbackLink.style.display = 'none';
-                });
-            }
         }
 
         function handleTouchStart(e) {
