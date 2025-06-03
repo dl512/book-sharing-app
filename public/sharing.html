@@ -960,6 +960,26 @@
                 const allBooks = await response.json();
                 console.log('All books received:', allBooks);
                 
+                // Log photo URLs for debugging
+                allBooks.forEach(book => {
+                    if (book.photoUrl) {
+                        // Check if URL is properly formatted
+                        try {
+                            const url = new URL(book.photoUrl);
+                            console.log('Book photo URL details:', {
+                                title: book.title,
+                                originalUrl: book.photoUrl,
+                                protocol: url.protocol,
+                                hostname: url.hostname,
+                                pathname: url.pathname,
+                                isSecure: url.protocol === 'https:'
+                            });
+                        } catch (e) {
+                            console.error('Invalid URL format:', book.photoUrl);
+                        }
+                    }
+                });
+                
                 // Get user ID from token
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
                 console.log('Current user ID:', userId);
@@ -1036,7 +1056,11 @@
                 <div class="book-card" id="current-card">
                     <div class="book-image">
                         ${book.photoUrl ? 
-                            `<img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';" loading="lazy">` :
+                            `<img src="${book.photoUrl}" alt="${book.title}" 
+                                onerror="console.log('Image load error for:', this.src); this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';" 
+                                onload="console.log('Image loaded successfully:', this.src)"
+                                loading="lazy"
+                                crossorigin="anonymous">` :
                             `<div class="placeholder">
                                 <i class="fas fa-book"></i>
                             </div>`
