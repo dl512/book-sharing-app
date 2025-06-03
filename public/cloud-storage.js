@@ -63,50 +63,21 @@ async function getSignedUrl(fileName, fileType) {
 // Function to upload a file to Google Cloud Storage
 async function uploadToCloud(file) {
   try {
-    console.log("Starting file upload process...");
-    console.log("File details:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
-
-    // Generate a safe file name with timestamp and encoded name
-    const timestamp = Date.now();
-    // Don't encode the file name here since it will be encoded by the server
-    const safeFileName = `${timestamp}-${file.name}`;
-    console.log("Generated safe file name:", safeFileName);
-
-    // Get a signed URL for upload
+    const safeFileName = generateSafeFileName(file.name);
     const { signedUrl, publicUrl } = await getSignedUrl(
       safeFileName,
       file.type
     );
-    console.log("Received signed URL:", signedUrl);
-    console.log("Received public URL:", publicUrl);
-
-    // Upload the file using the signed URL
-    console.log("Uploading file to signed URL...");
-    const uploadResponse = await fetch(signedUrl, {
+    await fetch(signedUrl, {
       method: "PUT",
+      body: file,
       headers: {
         "Content-Type": file.type,
       },
-      body: file,
     });
-
-    if (!uploadResponse.ok) {
-      console.error("Upload failed:", uploadResponse);
-      throw new Error("Failed to upload file");
-    }
-
-    console.log("File uploaded successfully");
-    console.log("Returning public URL:", publicUrl);
     return publicUrl;
   } catch (error) {
-    console.error("\n=== Error Uploading to Cloud ===");
-    console.error("Error details:", error);
-    console.error("Stack trace:", error.stack);
-    console.error("==============================\n");
+    console.error("Error uploading to cloud:", error);
     throw error;
   }
 }
