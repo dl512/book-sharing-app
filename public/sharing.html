@@ -1051,20 +1051,46 @@
                     return `<span class="sharing-option">${labels[key]}</span>`;
                 })
                 .join('');
+
+            // Function to handle image loading with retry
+            const imageHtml = book.photoUrl ? 
+                `<img src="${book.photoUrl}" alt="${book.title}" 
+                    onerror="
+                        console.log('Image load error for:', this.src);
+                        if (!this.dataset.retried) {
+                            this.dataset.retried = 'true';
+                            // Try to load through a proxy-like approach
+                            const originalSrc = this.src;
+                            fetch(originalSrc)
+                                .then(response => response.blob())
+                                .then(blob => {
+                                    const objectUrl = URL.createObjectURL(blob);
+                                    this.src = objectUrl;
+                                })
+                                .catch(err => {
+                                    console.error('Failed to load image:', err);
+                                    this.onerror = null;
+                                    this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
+                                    this.parentElement.classList.add('placeholder');
+                                    this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
+                                });
+                        } else {
+                            this.onerror = null;
+                            this.src = 'https://via.placeholder.com/400x600?text=No+Photo';
+                            this.parentElement.classList.add('placeholder');
+                            this.parentElement.innerHTML = '<i class=\'fas fa-book\'></i>';
+                        }"
+                    onload="console.log('Image loaded successfully:', this.src)"
+                    loading="lazy"
+                    crossorigin="anonymous">` :
+                `<div class="placeholder">
+                    <i class="fas fa-book"></i>
+                </div>`;
             
             container.innerHTML = `
                 <div class="book-card" id="current-card">
                     <div class="book-image">
-                        ${book.photoUrl ? 
-                            `<img src="${book.photoUrl}" alt="${book.title}" 
-                                onerror="console.log('Image load error for:', this.src); this.onerror=null; this.src='https://via.placeholder.com/400x600?text=No+Photo'; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<i class=\'fas fa-book\'></i>';" 
-                                onload="console.log('Image loaded successfully:', this.src)"
-                                loading="lazy"
-                                crossorigin="anonymous">` :
-                            `<div class="placeholder">
-                                <i class="fas fa-book"></i>
-                            </div>`
-                        }
+                        ${imageHtml}
                         <div class="action-buttons">
                             <button class="nav-button skip" onclick="skipBook()">
                                 <i class="fas fa-times"></i>
