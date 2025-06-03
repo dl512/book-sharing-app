@@ -1066,9 +1066,10 @@
                             </button>
                         </div>
                         ${book.photoUrl ? 
-                            `<div class="image-container">
-                                <img src="${book.photoUrl}" alt="${book.title}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'placeholder\\'><i class=\\'fas fa-book\\'></i></div>';" loading="lazy">
-                            </div>` :
+                            `<img src="${book.photoUrl}" 
+                                 alt="${book.title}" 
+                                 onerror="this.onerror=null; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='<div class=\\'placeholder\\'><i class=\\'fas fa-book\\'></i></div>';" 
+                                 loading="lazy">` :
                             `<div class="placeholder">
                                 <i class="fas fa-book"></i>
                             </div>`
