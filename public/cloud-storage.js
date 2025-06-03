@@ -2,6 +2,21 @@
 const BUCKET_NAME = "book-sharing-app-images";
 const API_ENDPOINT = "https://storage.googleapis.com";
 
+// Function to generate a safe file name
+function generateSafeFileName(originalName) {
+  // Get the file extension
+  const extension = originalName.split(".").pop();
+  // Create a timestamp
+  const timestamp = Date.now();
+  // Remove any special characters and spaces from the original name
+  const safeName = originalName
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase()
+    .slice(0, 20); // Limit the name length
+  // Return the new file name with timestamp
+  return `${timestamp}-${safeName}.${extension}`;
+}
+
 // Function to get a signed URL for uploading
 async function getSignedUrl(fileName, fileType) {
   try {
