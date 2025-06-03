@@ -239,6 +239,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const bookContainer = document.createElement("div");
       bookContainer.className = "book-container";
 
+      // Create the book image section
+      const bookImage = document.createElement("div");
+      bookImage.className = "book-image";
+
+      if (book.photoUrl) {
+        const img = document.createElement("img");
+        img.src = book.photoUrl;
+        img.alt = `${book.title} cover`;
+        bookImage.appendChild(img);
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "placeholder";
+        placeholder.innerHTML = '<i class="fas fa-book"></i>';
+        bookImage.appendChild(placeholder);
+      }
+      bookContainer.appendChild(bookImage);
+
       const buttonContainer = document.createElement("div");
       buttonContainer.className = "button-container";
 
