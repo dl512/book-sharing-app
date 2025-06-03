@@ -1049,7 +1049,10 @@
                     return isFromOtherUser && hasNotLiked;
                 });
 
-                console.log('Filtered books:', JSON.stringify(books, null, 2));
+                // Randomize the order of books
+                books = books.sort(() => Math.random() - 0.5);
+
+                console.log('Filtered and randomized books:', JSON.stringify(books, null, 2));
 
                 if (books.length === 0) {
                     showNoBooks();
