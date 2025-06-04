@@ -32,7 +32,7 @@ function updateProgress() {
 }
 
 // Handle next button click
-document.getElementById("next-to-books").addEventListener("click", () => {
+document.getElementById("next-to-books").addEventListener("click", async () => {
   const userId = document.getElementById("register-userid").value;
   const password = document.getElementById("register-password").value;
 
@@ -41,15 +41,38 @@ document.getElementById("next-to-books").addEventListener("click", () => {
     return;
   }
 
-  // Show progress bar and book counter
-  document.querySelector(".progress-bar").style.display = "block";
-  document.getElementById("book-counter").style.display = "block";
+  try {
+    // Check if username is available
+    const checkResponse = await fetch(
+      "https://book-sharing-app.onrender.com/api/auth/check-username",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      }
+    );
 
-  document.getElementById("user-section").classList.remove("active");
-  document.getElementById("book-section").classList.add("active");
+    if (!checkResponse.ok) {
+      const error = await checkResponse.text();
+      alert("Username is already taken. Please choose a different one.");
+      return;
+    }
 
-  // Initialize progress
-  updateProgress();
+    // If username is available, proceed to book section
+    document.querySelector(".progress-bar").style.display = "block";
+    document.getElementById("book-counter").style.display = "block";
+
+    document.getElementById("user-section").classList.remove("active");
+    document.getElementById("book-section").classList.add("active");
+
+    // Initialize progress
+    updateProgress();
+  } catch (error) {
+    console.error("Error checking username:", error);
+    alert("Error checking username availability. Please try again.");
+  }
 });
 
 // Handle book photo preview

@@ -166,6 +166,22 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Check username availability
+app.post("/api/auth/check-username", async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ userId });
+    if (existingUser) {
+      return res.status(400).send("Username is already taken");
+    }
+    res.status(200).send("Username is available");
+  } catch (error) {
+    console.error("Error checking username:", error);
+    res.status(500).send("Error checking username availability");
+  }
+});
+
 // Register user
 app.post("/api/auth/register", async (req, res) => {
   console.log("\n=== Registration Request Start ===");
